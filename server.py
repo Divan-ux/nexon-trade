@@ -3,6 +3,11 @@ import os, json, random, time, threading, feedparser, re, copy
 from datetime import datetime, timedelta
 import requests
 import yfinance as yf
+import nltk
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt', quiet=True)
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
