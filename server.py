@@ -1,23 +1,33 @@
-import os, json, random, time, threading, feedparser, re
+import os, json, time, threading, feedparser, re, random
 from datetime import datetime, timedelta, timezone
 import requests
 import yfinance as yf
+from flask import Flask, jsonify, send_from_directory
+from flask_socketio import SocketIO, emit
+from flask_cors import CORS
+
+# ----- NLTK data setup (punk tokenizer) -----
+import nltk
+nltk_data_dir = os.path.join(os.getcwd(), 'nltk_data')
+os.makedirs(nltk_data_dir, exist_ok=True)
+nltk.data.path.insert(0, nltk_data_dir)
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt', download_dir=nltk_data_dir, quiet=True)
+
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
 from geotext import GeoText
 
-from flask import Flask, jsonify, request, send_from_directory
-from flask_socketio import SocketIO, emit
-from flask_cors import CORS
-
-SECRET_KEY = "nexon_pulse_secret"
+# ----- Config -----
+SECRET_KEY = os.environ.get("SECRET_KEY", "nexon-pulse-prod-secret")
 app = Flask(__name__, static_folder='.', template_folder='.')
 app.config['SECRET_KEY'] = SECRET_KEY
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-# ─── RSS FEEDS ─────────────────────────────────────────────────────
 RSS_FEEDS = {
     "cybersecurity": [
         "https://feeds.feedburner.com/TheHackersNews",
@@ -94,13 +104,41 @@ STOCK_TICKERS = [
     "INTC", "AMD", "CSCO", "IBM",
 ]
 
-FOREX_PAIRS = [
-    "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X",
-]
+FOREX_PAIRS = ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X"]
 
 state_lock = threading.Lock()
-live_state = {}
+live_state = {
+    "articles": [],
+    "stocks": {},
+    "stock_history": {},
+    "threats": [],
+    "vulns": [],
+    "companies": [],
+    "briefings": [],
+    "ticker_news": [],
+    "incidents": 0,
+    "last_updated": None,
+    "sources_count": 80,
+    "forex": {},
+    "drop_analysis": {}
+}
 
+# ----- Timeout wrapper for slow API calls -----
+def run_with_timeout(func, timeout=20, default=None, *args, **kwargs):
+    result = [default]
+    def wrapper():
+        try:
+            result[0] = func(*args, **kwargs)
+        except Exception as e:
+            print(f"[TIMEOUT] {func.__name__} error: {e}")
+    thread = threading.Thread(target=wrapper, daemon=True)
+    thread.start()
+    thread.join(timeout)
+    if thread.is_alive():
+        print(f"[TIMEOUT] {func.__name__} timed out after {timeout}s")
+    return result[0]
+
+# ----- Helper functions -----
 def make_json_safe(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
@@ -151,6 +189,7 @@ def categorize_article(entry, feed_category):
     if feed_category == "government": return "Government"
     return "Other"
 
+# ----- Data fetching (with timeouts) -----
 def fetch_all_rss():
     articles = []
     for category, urls in RSS_FEEDS.items():
@@ -185,51 +224,34 @@ def fetch_all_rss():
 
 def fetch_stock_quotes():
     quotes = {}
-    batch_size = 10
-    all_tickers = [s for s in STOCK_TICKERS]
-    for i in range(0, len(all_tickers), batch_size):
-        batch = all_tickers[i:i+batch_size]
+    for sym in STOCK_TICKERS:
         try:
-            tickers_obj = yf.Tickers(" ".join(batch))
-            for sym in batch:
-                try:
-                    info = tickers_obj.tickers[sym].info
-                    hist = tickers_obj.tickers[sym].history(period="5d")
-                    prev_close = None
-                    if len(hist) >= 2:
-                        prev_close = hist['Close'].iloc[-2]
-                    current = info.get("regularMarketPrice") or info.get("currentPrice")
-                    change = None
-                    change_pct = None
-                    if current and prev_close:
-                        change = current - prev_close
-                        change_pct = (change / prev_close) * 100
-                    quotes[sym] = {
-                        "price": current,
-                        "change": change,
-                        "change_pct": change_pct,
-                        "name": info.get("shortName", sym),
-                        "volume": info.get("regularMarketVolume"),
-                    }
-                except:
-                    quotes[sym] = {"price": None, "change": None, "name": sym}
+            ticker = yf.Ticker(sym)
+            info = ticker.info
+            hist = ticker.history(period="5d")
+            prev_close = hist['Close'].iloc[-2] if len(hist) >= 2 else None
+            current = info.get("regularMarketPrice") or info.get("currentPrice")
+            change = (current - prev_close) if current and prev_close else None
+            quotes[sym] = {
+                "price": current,
+                "change": round(change, 2) if change else None,
+                "name": info.get("shortName", sym),
+                "volume": info.get("regularMarketVolume"),
+            }
         except:
-            for sym in batch:
-                quotes[sym] = {"price": None, "change": None, "name": sym}
+            quotes[sym] = {"price": None, "change": None, "name": sym}
     return quotes
 
 def generate_stock_history():
     history = {}
-    for sym in STOCK_TICKERS:
+    for sym in STOCK_TICKERS[:10]:  # top 10 for speed
         try:
             ticker = yf.Ticker(sym)
             hist = ticker.history(period="1mo")
             if not hist.empty:
                 history[sym] = [round(p, 2) for p in hist['Close'].tolist()]
-            else:
-                history[sym] = []
         except:
-            history[sym] = []
+            pass
     return history
 
 def fetch_forex_rates():
@@ -237,14 +259,12 @@ def fetch_forex_rates():
     for pair in FOREX_PAIRS:
         try:
             ticker = yf.Ticker(pair)
-            info = ticker.history(period="1d", interval="1m")
-            if not info.empty:
-                price = info['Close'].iloc[-1]
+            data = ticker.history(period="2d", interval="1h")
+            if not data.empty:
+                price = data['Close'].iloc[-1]
                 forex[pair] = {"price": round(price, 5)}
-            else:
-                forex[pair] = {"price": None}
         except:
-            forex[pair] = {"price": None}
+            pass
     return forex
 
 def fetch_nvd_vulns():
@@ -259,7 +279,7 @@ def fetch_nvd_vulns():
             "resultsPerPage": 20,
             "sort": "publishedDate"
         }
-        resp = requests.get(url, params=params, timeout=15)
+        resp = requests.get(url, params=params, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
             for item in data.get("vulnerabilities", [])[:15]:
@@ -267,9 +287,8 @@ def fetch_nvd_vulns():
                 cve_id = cve.get("id", "")
                 desc = next((d["value"] for d in cve.get("descriptions", []) if d.get("lang")=="en"), "")
                 metrics = cve.get("metrics", {})
-                cvss_v31 = metrics.get("cvssMetricV31", [{}])[0] if metrics.get("cvssMetricV31") else {}
-                cvss_v30 = metrics.get("cvssMetricV30", [{}])[0] if metrics.get("cvssMetricV30") else {}
-                cvss_data = cvss_v31.get("cvssData", {}) or cvss_v30.get("cvssData", {})
+                cvss_data = (metrics.get("cvssMetricV31", [{}])[0] if metrics.get("cvssMetricV31") else
+                             metrics.get("cvssMetricV30", [{}])[0] if metrics.get("cvssMetricV30") else {}).get("cvssData", {})
                 score = cvss_data.get("baseScore", 0)
                 sev = cvss_data.get("baseSeverity", "MEDIUM").upper()
                 affected_stocks = [s for s in STOCK_TICKERS if s.lower() in desc.lower()]
@@ -288,16 +307,6 @@ def fetch_nvd_vulns():
     except Exception as e:
         print(f"NVD API error: {e}")
     return vulns
-
-def generate_briefing(articles):
-    top5 = articles[:5]
-    summaries = [summarize_text(a["summary"] or a["title"]) for a in top5]
-    combined = " ".join(summaries)
-    return {
-        "title": "Daily Intelligence Briefing",
-        "content": combined,
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }
 
 def transform_to_threats(articles):
     threats = []
@@ -321,10 +330,17 @@ def transform_to_threats(articles):
             })
     return threats[:20]
 
+def generate_briefing(articles):
+    top5 = articles[:5]
+    summaries = [summarize_text(a["summary"] or a["title"]) for a in top5]
+    return {
+        "title": "Daily Intelligence Briefing",
+        "content": " ".join(summaries),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 def generate_company_list():
     companies = []
-    sectors_pool = ["Cybersecurity", "Big Tech", "Cloud", "AI/ML", "Semiconductors", "Software", "IT Services"]
-    statuses = ["MONITORED", "CLEAR", "ELEVATED", "HIGH RISK"]
     for sym in STOCK_TICKERS:
         companies.append({
             "name": sym,
@@ -332,8 +348,8 @@ def generate_company_list():
             "risk": random.randint(10, 95),
             "ai": random.randint(30, 100),
             "incidents": random.randint(0, 20),
-            "sector": random.choice(sectors_pool),
-            "status": random.choice(statuses)
+            "sector": random.choice(["Cybersecurity", "Big Tech", "Cloud", "AI/ML", "Semiconductors"]),
+            "status": random.choice(["MONITORED", "CLEAR", "ELEVATED", "HIGH RISK"])
         })
     return companies
 
@@ -346,116 +362,108 @@ def build_stock_drop_analysis(stocks, articles):
                 text = (a.get("title","") + " " + a.get("summary","")).lower()
                 if sym.lower() in text:
                     related.append(a["title"][:100])
-            pct = data.get("change_pct", data["change"])
             analysis[sym] = {
-                "drop_pct": round(pct, 2) if pct else round(data["change"], 2),
+                "drop_pct": round(data["change"], 2),
                 "related_news": related[:3],
-                "risk_level": "HIGH" if abs(data.get("change", 0)) > 3 else "MEDIUM" if abs(data.get("change", 0)) > 1 else "LOW"
+                "risk_level": "HIGH" if abs(data["change"]) > 3 else "MEDIUM"
             }
     return analysis
 
+# ----- Core refresh (fast data emitted immediately, slow data in background) -----
 def refresh_all():
     global live_state
-    with state_lock:
-        print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] Refreshing data...")
-        try:
-            articles = fetch_all_rss()
-            stocks = fetch_stock_quotes()
-            stock_history = generate_stock_history()
-            threats = transform_to_threats(articles)
-            briefing = generate_briefing(articles)
-            ticker_news = [a["title"] for a in articles[:20]]
-            vulns = fetch_nvd_vulns()
-            companies = generate_company_list()
-            forex = fetch_forex_rates()
-            drop_analysis = build_stock_drop_analysis(stocks, articles)
+    print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] Starting refresh...")
 
-            new_state = {
-                "articles": articles,
+    # Fast data
+    articles = run_with_timeout(fetch_all_rss, timeout=20, default=[])
+    threats = transform_to_threats(articles)
+    ticker_news = [a["title"] for a in articles[:20]]
+    briefing = generate_briefing(articles)
+    vulns = run_with_timeout(fetch_nvd_vulns, timeout=15, default=[])
+    companies = generate_company_list()
+    incidents = len(threats)
+
+    # Update state with fast data and emit
+    with state_lock:
+        live_state.update({
+            "articles": articles,
+            "threats": threats,
+            "vulns": vulns,
+            "companies": companies,
+            "briefings": [briefing],
+            "ticker_news": ticker_news,
+            "incidents": incidents,
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
+            # stocks and forex remain from previous update (or empty)
+        })
+    socketio.emit("live_data", make_json_safe(live_state))
+
+    # Slow data (stocks, forex) fetched in background
+    def fetch_slow():
+        print("Background: fetching stocks & forex...")
+        stocks = run_with_timeout(fetch_stock_quotes, timeout=30, default={})
+        stock_history = run_with_timeout(generate_stock_history, timeout=20, default={})
+        forex = run_with_timeout(fetch_forex_rates, timeout=20, default={})
+        drop_analysis = build_stock_drop_analysis(stocks, articles)
+        with state_lock:
+            live_state.update({
                 "stocks": stocks,
                 "stock_history": stock_history,
-                "threats": threats,
-                "vulns": vulns,
-                "companies": companies,
-                "briefings": [briefing],
-                "ticker_news": ticker_news,
-                "incidents": len(threats),
-                "last_updated": datetime.now(timezone.utc).isoformat(),
-                "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
                 "forex": forex,
                 "drop_analysis": drop_analysis,
-            }
-            live_state = make_json_safe(new_state)
-        except Exception as e:
-            print(f"Refresh error: {e}")
-            if not live_state:
-                live_state = {
-                    "articles": [], "stocks": {}, "stock_history": {},
-                    "threats": [], "vulns": [], "companies": [], "briefings": [],
-                    "ticker_news": [], "incidents": 0,
-                    "last_updated": datetime.now(timezone.utc).isoformat(),
-                    "sources_count": 80, "forex": {}, "drop_analysis": {}
-                }
-    socketio.emit("live_data", live_state)
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+            })
+        socketio.emit("stock_update", {"stocks": stocks})
+        socketio.emit("forex_update", {"forex": forex})
+        print("Background: stocks & forex done.")
+    threading.Thread(target=fetch_slow, daemon=True).start()
 
+# ----- Periodic updaters -----
 def stock_updater():
     while True:
-        time.sleep(30)
-        try:
-            stocks = fetch_stock_quotes()
-            with state_lock:
-                live_state["stocks"] = stocks
-            socketio.emit("stock_update", {"stocks": stocks})
-        except:
-            pass
+        time.sleep(60)
+        stocks = run_with_timeout(fetch_stock_quotes, timeout=25, default={})
+        with state_lock:
+            live_state["stocks"] = stocks
+        socketio.emit("stock_update", {"stocks": stocks})
 
 def forex_updater():
     while True:
         time.sleep(60)
-        try:
-            forex = fetch_forex_rates()
-            with state_lock:
-                live_state["forex"] = forex
-            socketio.emit("forex_update", {"forex": forex})
-        except:
-            pass
+        forex = run_with_timeout(fetch_forex_rates, timeout=20, default={})
+        with state_lock:
+            live_state["forex"] = forex
+        socketio.emit("forex_update", {"forex": forex})
 
+def scheduled_full_refresh():
+    while True:
+        time.sleep(300)
+        refresh_all()
+
+# ----- Flask routes & Socket.IO -----
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
 
 @app.route("/api/state")
 def full_state():
-    return jsonify(live_state)
+    return jsonify(make_json_safe(live_state))
 
 @socketio.on("connect")
-def on_connect(auth=None):
-    emit("live_data", live_state)
+def on_connect():
+    emit("live_data", make_json_safe(live_state))
 
 @socketio.on("request_refresh")
-def on_refresh(auth=None):
+def on_refresh():
     refresh_all()
 
+# ----- Main -----
 if __name__ == "__main__":
-    import nltk
-    try:
-        nltk.data.find('tokenizers/punkt')
-    except LookupError:
-        nltk.download('punkt', quiet=True)
-
-    print("NEXON PULSE SERVER – launching...")
-    # Start background threads FIRST
     threading.Thread(target=stock_updater, daemon=True).start()
     threading.Thread(target=forex_updater, daemon=True).start()
-    def scheduled():
-        while True:
-            time.sleep(300)
-            try:
-                refresh_all()
-            except:
-                pass
-    threading.Thread(target=scheduled, daemon=True).start()
-    # Initial data fetch
+    threading.Thread(target=scheduled_full_refresh, daemon=True).start()
+    # Initial data fetch in background
     threading.Thread(target=refresh_all, daemon=True).start()
 
     port = int(os.environ.get("PORT", 5000))
