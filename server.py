@@ -3,11 +3,6 @@ import os, json, random, time, threading, feedparser, re, copy
 from datetime import datetime, timedelta
 import requests
 import yfinance as yf
-import nltk
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
@@ -17,14 +12,13 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
-# ═══════════════ CONFIG ═══════════════
 SECRET_KEY = "nexon_pulse_secret"
 app = Flask(__name__, static_folder='.', template_folder='.')
 app.config['SECRET_KEY'] = SECRET_KEY
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
-# ═══════════════ RSS FEED LIST (80+ sources) ═══════════════
+# ─── RSS FEEDS (unchanged) ─────────────────────────────────────────
 RSS_FEEDS = {
     "cybersecurity": [
         "https://feeds.feedburner.com/TheHackersNews",
@@ -90,7 +84,7 @@ RSS_FEEDS = {
     ]
 }
 
-# ═══════════════ STOCK TICKERS (56 valid symbols, no dead tickers) ═══════════════
+# ─── STOCK TICKERS (56 symbols) ───────────────────────────────────
 STOCK_TICKERS = [
     "MSFT", "GOOGL", "AMZN", "AAPL", "META", "NVDA", "TSLA",
     "CRWD", "PANW", "S", "FTNT", "OKTA", "ZS", "NET", "CHKP", "TENB", "VRNS",
@@ -98,32 +92,37 @@ STOCK_TICKERS = [
     "ADBE", "ORCL", "CRM", "NOW", "SNOW", "PLTR", "U", "PATH", "MNDY", "GTLB",
     "DBX", "BOX", "ZM", "DOCN", "SENT", "RBRK",
     "INTC", "AMD", "CSCO", "IBM",
-    "VRNS", "QLYS", "RPD", "FSLY", "NET", "AKAM", "CLBT", "TENB", "VRNS", "QLYS", "RPD"
-][:56]  # 56 unique symbols
+    "VRNS", "QLYS", "RPD", "FSLY", "NET", "AKAM", "CLBT", "TENB"
+][:56]
 
-# ═══════════════ FALLBACK COMPANIES (56 entries) ═══════════════
-def generate_company_list():
-    companies = []
-    sectors_pool = ["Cybersecurity", "Big Tech", "Cloud", "AI/ML", "Semiconductors", "Software", "IT Services"]
-    statuses = ["MONITORED", "CLEAR", "ELEVATED", "HIGH RISK"]
-    for sym in STOCK_TICKERS:
-        companies.append({
-            "name": sym,
-            "ticker": sym,
-            "risk": random.randint(10, 95),
-            "ai": random.randint(30, 100),
-            "incidents": random.randint(0, 20),
-            "sector": random.choice(sectors_pool),
-            "status": random.choice(statuses)
-        })
-    return companies
+# ─── FOREX PAIRS (real-time via yfinance) ─────────────────────────
+FOREX_PAIRS = [
+    "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X", "USDCAD=X", "USDCHF=X",
+    "NZDUSD=X", "EURGBP=X", "EURJPY=X", "GBPJPY=X"
+]
 
-# ═══════════════ GLOBAL STATE ═══════════════
+def fetch_forex_rates():
+    """Get live forex rates using yfinance"""
+    forex = {}
+    for pair in FOREX_PAIRS:
+        try:
+            ticker = yf.Ticker(pair)
+            info = ticker.history(period="1d", interval="1m")
+            if not info.empty:
+                price = info['Close'].iloc[-1]
+                forex[pair] = {"price": round(price, 5)}
+            else:
+                forex[pair] = {"price": None}
+        except:
+            forex[pair] = {"price": None}
+    return forex
+
+# ─── GLOBAL STATE ─────────────────────────────────────────────────
 state_lock = threading.Lock()
-_last_valid_prices = {}
 live_state = {}
+forex_data = {}
 
-# ═══════════════ UTILS ═══════════════
+# ─── UTILITIES (same as original) ─────────────────────────────────
 def make_json_safe(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
@@ -206,82 +205,37 @@ def fetch_all_rss():
     return unique[:100]
 
 def fetch_stock_quotes():
-    """Fetch real stock quotes; fall back to simulated data if Yahoo fails."""
-    global _last_valid_prices
     quotes = {}
-    valid_tickers = [s for s in STOCK_TICKERS if s != "CYBR"]  # skip known bad
-    
-    # Try to get real data from Yahoo
+    valid_tickers = [sym for sym in STOCK_TICKERS]
     try:
         tickers_obj = yf.Tickers(" ".join(valid_tickers))
         for sym in valid_tickers:
             try:
                 info = tickers_obj.tickers[sym].info
-                price = info.get("regularMarketPrice") or info.get("currentPrice")
-                if price is not None:
-                    _last_valid_prices[sym] = float(price)
-                    quotes[sym] = {
-                        "price": float(price),
-                        "change": info.get("regularMarketChange", 0) or 0,
-                        "change_pct": info.get("regularMarketChangePercent", 0) or 0,
-                        "name": info.get("shortName", sym)
-                    }
-                    continue
+                quotes[sym] = {
+                    "price": info.get("regularMarketPrice") or info.get("currentPrice"),
+                    "change": info.get("regularMarketChange"),
+                    "change_pct": info.get("regularMarketChangePercent"),
+                    "name": info.get("shortName", sym)
+                }
             except:
-                pass
-            # Fallback: use last known price with slight random movement
-            base = _last_valid_prices.get(sym, random.uniform(30, 300))
-            change = round(random.uniform(-1.5, 1.5), 2)
-            _last_valid_prices[sym] = round(base + change, 2)
-            quotes[sym] = {
-                "price": _last_valid_prices[sym],
-                "change": change,
-                "change_pct": round(change / _last_valid_prices[sym] * 100, 2),
-                "name": sym
-            }
+                quotes[sym] = {"price": None, "change": None}
     except Exception as e:
         print(f"Stock fetch error: {e}")
-        # All simulated
-        for sym in STOCK_TICKERS:
-            base = _last_valid_prices.get(sym, random.uniform(30, 300))
-            change = round(random.uniform(-1.5, 1.5), 2)
-            _last_valid_prices[sym] = round(base + change, 2)
-            quotes[sym] = {
-                "price": _last_valid_prices[sym],
-                "change": change,
-                "change_pct": round(change / _last_valid_prices[sym] * 100, 2),
-                "name": sym
-            }
-    
-    # Ensure all 56 tickers are present
-    for sym in STOCK_TICKERS:
-        if sym not in quotes:
-            base = _last_valid_prices.get(sym, random.uniform(30, 300))
-            change = round(random.uniform(-1.5, 1.5), 2)
-            _last_valid_prices[sym] = round(base + change, 2)
-            quotes[sym] = {
-                "price": _last_valid_prices[sym],
-                "change": change,
-                "change_pct": round(change / _last_valid_prices[sym] * 100, 2),
-                "name": sym
-            }
-    
     return quotes
 
 def generate_stock_history():
-    """Generate 30-day history using last valid prices as baseline."""
     history = {}
     for sym in STOCK_TICKERS:
-        base = _last_valid_prices.get(sym, random.uniform(50, 300))
+        base = random.uniform(50, 300)
         prices = []
         for i in range(30):
-            base += random.uniform(-1.5, 1.5)
+            base += random.uniform(-2, 2)
             prices.append(round(base, 2))
         history[sym] = prices
     return history
-    
+
 def fetch_nvd_vulns():
-    """Fetch latest CVEs from NVD API v2.0 (free, no key)"""
     vulns = []
     try:
         end = datetime.utcnow()
@@ -373,6 +327,22 @@ def build_map_nodes(threats):
         ]
     return nodes[:15]
 
+def generate_company_list():
+    companies = []
+    sectors_pool = ["Cybersecurity", "Big Tech", "Cloud", "AI/ML", "Semiconductors", "Software", "IT Services"]
+    statuses = ["MONITORED", "CLEAR", "ELEVATED", "HIGH RISK"]
+    for sym in STOCK_TICKERS:
+        companies.append({
+            "name": sym,
+            "ticker": sym,
+            "risk": random.randint(10, 95),
+            "ai": random.randint(30, 100),
+            "incidents": random.randint(0, 20),
+            "sector": random.choice(sectors_pool),
+            "status": random.choice(statuses)
+        })
+    return companies
+
 def refresh_all():
     global live_state
     with state_lock:
@@ -386,6 +356,7 @@ def refresh_all():
         ticker_news = [a["title"] for a in articles[:20]]
         vulns = fetch_nvd_vulns()
         companies = generate_company_list()
+        forex = fetch_forex_rates()
 
         new_state = {
             "articles": articles,
@@ -399,12 +370,25 @@ def refresh_all():
             "ticker_news": ticker_news,
             "incidents": len(threats),
             "last_updated": datetime.utcnow().isoformat(),
-            "sources_count": sum(len(v) for v in RSS_FEEDS.values())
+            "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
+            "forex": forex
         }
         live_state = make_json_safe(new_state)
     socketio.emit("live_data", live_state)
 
-def pulse_sim():
+def forex_updater():
+    while True:
+        time.sleep(60)  # update forex every minute
+        try:
+            forex = fetch_forex_rates()
+            with state_lock:
+                if "forex" in live_state:
+                    live_state["forex"] = forex
+            socketio.emit("forex_update", {"forex": forex})
+        except:
+            pass
+
+def stock_updater():
     while True:
         time.sleep(30)
         try:
@@ -415,7 +399,7 @@ def pulse_sim():
         except:
             pass
 
-# ═══════════════ ROUTES ═══════════════
+# ─── ROUTES ───────────────────────────────────────────────────────
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -435,7 +419,8 @@ def on_refresh(auth=None):
 if __name__ == "__main__":
     print("NEXON PULSE SERVER – launching on port 5000")
     refresh_all()
-    threading.Thread(target=pulse_sim, daemon=True).start()
+    threading.Thread(target=stock_updater, daemon=True).start()
+    threading.Thread(target=forex_updater, daemon=True).start()
     def scheduled():
         while True:
             time.sleep(300)
