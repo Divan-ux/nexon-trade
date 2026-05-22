@@ -1,2267 +1,568 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexon Pulse | Cyber Intelligence Terminal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Syne:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
-    </script>
-    <!-- TradingView Widgets -->
-    <script src="https://s3.tradingview.com/tv.js">
-    </script>
-    <style>
-        /* ═══════════════════════════════════════════════════
-       NEXON PULSE — TECHNOLOGY INTELLIGENCE DASHBOARD
-       Design System: Luxury Dark · Gold Accent · Larger Scale
-       v2.0 — Enhanced with TradingView, Forex, Live TV
-       ═══════════════════════════════════════════════════ */
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexon Pulse | Cyber Intelligence Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Syne:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   NEXON PULSE — TECHNOLOGY INTELLIGENCE DASHBOARD
+   v3.0 — Fixed & Enhanced
+   ═══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        :root {
-            --font-size-base: 16px;
-            --black: #000000;
-            --near-black: #080808;
-            --surface: #0c0c0c;
-            --surface-raised: #111111;
-            --surface-hover: #161616;
-            --border: #1e1e1e;
-            --border-subtle: #141414;
-            --gold: #D4AF37;
-            --gold-bright: #F2CC54;
-            --gold-dim: #7A621A;
-            --gold-faint: rgba(212, 175, 55, 0.06);
-            --gold-glow: rgba(212, 175, 55, 0.20);
-            --gold-glow-sm: rgba(212, 175, 55, 0.10);
-            --text-1: #F2EDE4;
-            --text-2: #9A9490;
-            --text-3: #545050;
-            --text-4: #2E2E2E;
-            --red: #FF3B30;
-            --green: #34C759;
-            --font-brand: 'Syncopate', sans-serif;
-            --font-ui: 'Syne', sans-serif;
-            --font-mono: 'Space Mono', monospace;
-            --hdr: 70px;
-            --tick: 38px;
-            --tabs: 54px;
-            --sbar: 40px;
-            --side: 320px;
-            --sticky-summit: calc(var(--tick) * 2 + var(--hdr) + var(--tabs) + var(--sbar));
-        }
+:root {
+  --black: #000000; --near-black: #080808; --surface: #0c0c0c;
+  --surface-raised: #111111; --surface-hover: #161616; --border: #1e1e1e;
+  --border-subtle: #141414; --gold: #D4AF37; --gold-bright: #F2CC54;
+  --gold-dim: #7A621A; --gold-faint: rgba(212,175,55,0.06);
+  --gold-glow: rgba(212,175,55,0.20); --text-1: #F2EDE4; --text-2: #9A9490;
+  --text-3: #545050; --red: #FF3B30; --green: #34C759;
+  --font-brand: 'Syncopate', sans-serif; --font-ui: 'Syne', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --hdr: 70px; --tick: 38px; --tabs: 54px; --sbar: 40px; --side: 320px;
+  --sticky-summit: calc(var(--tick)*2 + var(--hdr) + var(--tabs) + var(--sbar));
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body { background: var(--black); color: var(--text-1); font-family: var(--font-ui); min-height: 100vh; overflow-x: hidden; }
+body::after { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9000; }
+::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
 
-        html {
-            font-size: var(--font-size-base);
-            scroll-behavior: smooth;
-        }
+#loading { position: fixed; inset: 0; background: var(--black); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 8000; transition: opacity 0.6s ease; }
+#loading.out { opacity: 0; pointer-events: none; }
+.ld-logo { font-family: var(--font-brand); font-size: clamp(2.5rem, 6vw, 4rem); font-weight: 700; letter-spacing: 14px; color: var(--gold); text-shadow: 0 0 80px rgba(212,175,55,0.5); margin-bottom: 12px; animation: goldPulse 2.5s ease-in-out infinite; }
+@keyframes goldPulse { 0%,100%{text-shadow:0 0 40px rgba(212,175,55,0.4)} 50%{text-shadow:0 0 80px rgba(212,175,55,0.7),0 0 140px rgba(212,175,55,0.3)} }
+.ld-sub { font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 5px; color: var(--text-3); text-transform: uppercase; margin-bottom: 40px; }
+.ld-bar { width: 260px; height: 2px; background: var(--border); position: relative; overflow: hidden; }
+.ld-bar::after { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, var(--gold), transparent); animation: barSweep 1.6s ease-in-out infinite; }
+@keyframes barSweep { 0%{left:-100%} 100%{left:100%} }
+.ld-status { font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-3); letter-spacing: 2px; margin-top: 16px; text-transform: uppercase; }
 
-        body {
-            background: var(--black);
-            color: var(--text-1);
-            font-family: var(--font-ui);
-            min-height: 100vh;
-            overflow-x: hidden;
-            font-size: 1rem;
-        }
+#ticker-news, #ticker-stocks { height: var(--tick); background: var(--near-black); border-bottom: 1px solid var(--border); display: flex; align-items: center; overflow: hidden; position: sticky; z-index: 400; }
+#ticker-news { top: 0; } #ticker-stocks { top: var(--tick); }
+.tick-label { padding: 0 16px; height: 100%; font-family: var(--font-mono); font-size: 0.75rem; color: var(--gold); letter-spacing: 3px; text-transform: uppercase; border-right: 1px solid var(--border); background: var(--black); display: flex; align-items: center; flex-shrink: 0; gap: 8px; }
+.tick-dot { width: 6px; height: 6px; background: var(--red); border-radius: 50%; box-shadow: 0 0 6px var(--red); animation: blink 2s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.tick-scroll { flex:1; overflow: hidden; height: 100%; display: flex; align-items: center; }
+.tick-inner { display: flex; white-space: nowrap; animation: tickScroll 120s linear infinite; }
+.tick-inner:hover { animation-play-state: paused; }
+@keyframes tickScroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.tick-item { display: inline-flex; align-items: center; padding: 0 32px; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-2); border-right: 1px solid var(--border); gap: 10px; }
+.tick-cat { font-size: 0.65rem; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; border: 1px solid var(--gold-dim); padding: 2px 6px; }
 
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 9000;
-        }
+#header { height: var(--hdr); background: var(--black); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; position: sticky; top: calc(var(--tick)*2); z-index: 300; }
+.brand { display: flex; align-items: center; gap: 20px; }
+.brand-name { font-family: var(--font-brand); font-size: 1.6rem; font-weight: 700; letter-spacing: 8px; color: var(--gold); text-shadow: 0 0 30px var(--gold-glow); }
+.brand-tag { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-3); letter-spacing: 3px; text-transform: uppercase; border-left: 1px solid var(--border); padding-left: 20px; }
+.hdr-right { display: flex; align-items: center; gap: 24px; }
+.live-badge { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-3); }
+#last-upd { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-3); }
+.refresh-btn { display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); padding: 8px 18px; font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+.refresh-btn:hover { background: var(--gold-faint); border-color: var(--gold); }
 
-        ::-webkit-scrollbar {
-            width: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--gold-dim);
-            border-radius: 2px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--gold);
-        }
+#tabs { height: var(--tabs); background: var(--black); border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; padding: 0 12px; position: sticky; top: calc(var(--tick)*2 + var(--hdr)); z-index: 200; overflow-x: auto; }
+.tab { background: none; border: none; color: var(--text-3); font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; padding: 14px 12px; cursor: pointer; position: relative; white-space: nowrap; }
+.tab::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--gold); transform: scaleX(0); transition: transform 0.25s ease; }
+.tab.on { color: var(--gold); } .tab.on::after { transform: scaleX(1); }
+.tab:hover:not(.on) { color: var(--text-2); }
+.tab-new { color: #F2CC54 !important; animation: tabPulse 2s ease-in-out infinite; }
+@keyframes tabPulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
-        /* ═══════ LOADING OVERLAY ═══════ */
-        #loading {
-            position: fixed;
-            inset: 0;
-            background: var(--black);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 8000;
-            transition: opacity 0.6s ease;
-        }
-        #loading.out {
-            opacity: 0;
-            pointer-events: none;
-        }
-        .ld-logo {
-            font-family: var(--font-brand);
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            font-weight: 700;
-            letter-spacing: 14px;
-            color: var(--gold);
-            text-shadow: 0 0 80px rgba(212, 175, 55, 0.5), 0 0 120px rgba(212, 175, 55, 0.2);
-            margin-bottom: 12px;
-            animation: goldPulse 2.5s ease-in-out infinite;
-        }
-        @keyframes goldPulse {
-            0%,
-            100% {
-                text-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
-            }
-            50% {
-                text-shadow: 0 0 80px rgba(212, 175, 55, 0.7), 0 0 140px rgba(212, 175, 55, 0.3);
-            }
-        }
-        .ld-sub {
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            letter-spacing: 5px;
-            color: var(--text-3);
-            text-transform: uppercase;
-            margin-bottom: 40px;
-        }
-        .ld-bar {
-            width: 260px;
-            height: 2px;
-            background: var(--border);
-            position: relative;
-            overflow: hidden;
-        }
-        .ld-bar::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            animation: barSweep 1.6s ease-in-out infinite;
-        }
-        @keyframes barSweep {
-            0% {
-                left: -100%;
-            }
-            100% {
-                left: 100%;
-            }
-        }
-        .ld-status {
-            font-family: var(--font-mono);
-            font-size: 0.9rem;
-            color: var(--text-3);
-            letter-spacing: 2px;
-            margin-top: 16px;
-            text-transform: uppercase;
-        }
+#sbar { height: var(--sbar); background: var(--near-black); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase; position: sticky; top: calc(var(--tick)*2 + var(--hdr) + var(--tabs)); z-index: 100; }
+.sb-item { display: flex; align-items: center; gap: 6px; padding: 0 18px; border-right: 1px solid var(--border); }
+.sb-label { color: var(--text-3); } .sb-val { color: var(--gold); font-weight: 700; }
+.sb-right { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--text-3); }
+#countdown { color: var(--gold); }
 
-        /* ═══════ STICKY ELEMENTS ═══════ */
-        #ticker-news,
-        #ticker-stocks {
-            height: var(--tick);
-            background: var(--near-black);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            position: sticky;
-            z-index: 400;
-        }
-        #ticker-news {
-            top: 0;
-        }
-        #ticker-stocks {
-            top: var(--tick);
-        }
-        .tick-label {
-            padding: 0 16px;
-            height: 100%;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--gold);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            border-right: 1px solid var(--border);
-            background: var(--black);
-            display: flex;
-            align-items: center;
-            flex-shrink: 0;
-            gap: 8px;
-            white-space: nowrap;
-        }
-        .tick-dot {
-            width: 6px;
-            height: 6px;
-            background: var(--red);
-            border-radius: 50%;
-            box-shadow: 0 0 6px var(--red);
-            animation: blink 2s ease infinite;
-        }
-        @keyframes blink {
-            0%,
-            100% {
-                opacity: 1
-            }
-            50% {
-                opacity: 0.4
-            }
-        }
-        .tick-scroll {
-            flex: 1;
-            overflow: hidden;
-            height: 100%;
-            display: flex;
-            align-items: center;
-        }
-        .tick-inner {
-            display: flex;
-            gap: 0;
-            white-space: nowrap;
-            animation: tickScroll 100s linear infinite;
-        }
-        .tick-inner:hover {
-            animation-play-state: paused;
-        }
-        @keyframes tickScroll {
-            from {
-                transform: translateX(0);
-            }
-            to {
-                transform: translateX(-50%);
-            }
-        }
-        .tick-item {
-            display: inline-flex;
-            align-items: center;
-            padding: 0 32px;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            color: var(--text-2);
-            border-right: 1px solid var(--border);
-            gap: 10px;
-        }
-        .tick-cat {
-            font-size: 0.65rem;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            border: 1px solid var(--gold-dim);
-            padding: 2px 6px;
-            flex-shrink: 0;
-        }
+#layout { display: flex; align-items: flex-start; max-width: 1800px; margin: 0 auto; }
+#feed { flex: 1; padding: 24px 24px 48px 24px; min-width: 0; }
+.feed-label { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: var(--text-3); margin-bottom: 18px; display: flex; align-items: center; gap: 12px; }
+.feed-label::after { content:''; flex:1; height:1px; background: var(--border); }
+.grid-main { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1px; background: var(--border); }
+.card { background: var(--surface); padding: 20px 22px; cursor: pointer; transition: background 0.18s; border-left: 2px solid transparent; }
+.card:hover { background: var(--surface-hover); border-left-color: var(--gold); }
+.card.breaking { border-left-color: var(--gold); background: linear-gradient(135deg, #0b0900 0%, var(--surface) 60%); }
+.c-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.c-cat { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; border: 1px solid; padding: 2px 8px; }
+.c-title { font-family: var(--font-ui); font-size: 1.1rem; font-weight: 700; line-height: 1.4; color: var(--text-1); margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.c-summary { font-family: var(--font-ui); font-size: 0.85rem; line-height: 1.6; color: var(--text-2); margin-bottom: 14px; }
+.c-foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 12px; }
+.c-source { font-family: var(--font-mono); font-size: 0.7rem; color: var(--gold-dim); letter-spacing: 1px; text-transform: uppercase; }
+.c-time { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3); }
 
-        #header {
-            height: var(--hdr);
-            background: var(--black);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 28px;
-            position: sticky;
-            top: calc(var(--tick) * 2);
-            z-index: 300;
-        }
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .brand-name {
-            font-family: var(--font-brand);
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: 8px;
-            color: var(--gold);
-            text-shadow: 0 0 30px var(--gold-glow);
-        }
-        .brand-tag {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--text-3);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            border-left: 1px solid var(--border);
-            padding-left: 20px;
-        }
-        .hdr-right {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
-        .live-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--text-3);
-        }
-        #last-upd {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--text-3);
-        }
-        .refresh-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: transparent;
-            border: 1px solid var(--gold-dim);
-            color: var(--gold);
-            padding: 8px 18px;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            cursor: pointer;
-        }
-        .refresh-btn:hover {
-            background: var(--gold-faint);
-            border-color: var(--gold);
-        }
+#sidebar { width: var(--side); flex-shrink: 0; padding: 24px 0 40px 0; border-left: 1px solid var(--border); position: sticky; top: var(--sticky-summit); max-height: calc(100vh - var(--sticky-summit)); overflow-y: auto; }
+.s-section { padding: 0 24px; margin-bottom: 30px; }
+.s-title { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.s-title::before { content:''; width:4px; height:4px; background:var(--gold); }
+.tr-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); cursor: pointer; }
+.tr-rank { font-family:var(--font-mono);font-size:0.7rem;color:var(--gold-dim);width:22px; }
+.tr-body { flex:1; padding:0 12px; }
+.tr-kw { font-family:var(--font-ui);font-size:0.95rem;font-weight:600;color:var(--text-2); }
+.tr-bar { height:2px;background:var(--gold);opacity:0.25;margin-top:4px; }
+.tr-cnt { font-family:var(--font-mono);font-size:0.7rem;color:var(--text-3); }
 
-        #tabs {
-            height: var(--tabs);
-            background: var(--black);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: flex-end;
-            padding: 0 16px;
-            position: sticky;
-            top: calc(var(--tick)*2 + var(--hdr));
-            z-index: 200;
-            overflow-x: auto;
-            gap: 0;
-        }
-        .tab {
-            background: none;
-            border: none;
-            color: var(--text-3);
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            padding: 14px 16px;
-            cursor: pointer;
-            position: relative;
-            white-space: nowrap;
-            transition: color 0.2s;
-        }
-        .tab::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--gold);
-            transform: scaleX(0);
-            transition: transform 0.25s ease;
-        }
-        .tab.on {
-            color: var(--gold);
-        }
-        .tab.on::after {
-            transform: scaleX(1);
-        }
-        .tab:hover:not(.on) {
-            color: var(--text-2);
-        }
-        .tab-new {
-            color: #F2CC54 !important;
-            animation: tabPulse 2s ease-in-out infinite;
-        }
-        @keyframes tabPulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.6;
-            }
-        }
+.cat-core{--cat-color:var(--text-2)} .cat-ai{--cat-color:#F2CC54} .cat-security{--cat-color:#EF4444} .cat-market{--cat-color:#10B981} .cat-dev{--cat-color:#3B82F6}
+.c-cat { color: var(--cat-color); border-color: var(--cat-color); background: color-mix(in srgb, var(--cat-color), transparent 90%); }
 
-        #sbar {
-            height: var(--sbar);
-            background: var(--near-black);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            position: sticky;
-            top: calc(var(--tick)*2 + var(--hdr) + var(--tabs));
-            z-index: 100;
-        }
-        .sb-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 0 18px;
-            border-right: 1px solid var(--border);
-        }
-        .sb-item:first-child {
-            padding-left: 0;
-        }
-        .sb-label {
-            color: var(--text-3);
-        }
-        .sb-val {
-            color: var(--gold);
-            font-weight: 700;
-        }
-        .sb-right {
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--text-3);
-            padding-right: 0;
-            border-right: none;
-        }
-        #countdown {
-            color: var(--gold);
-        }
+.tv-widget-frame { width: 100%; border: none; border-radius: 4px; background: var(--surface); }
+.tv-widget-container { background: var(--surface); border: 1px solid var(--border); margin-bottom: 20px; overflow: hidden; }
+#footer { border-top: 1px solid var(--border); padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; }
+.ft-brand { font-family:var(--font-brand); font-size:0.9rem; letter-spacing:5px; color:var(--gold-dim); }
+.ft-txt { font-family:var(--font-mono); color:var(--text-3); letter-spacing:1px; }
 
-        /* ═══════ LAYOUT ═══════ */
-        #layout {
-            display: flex;
-            align-items: flex-start;
-            max-width: 1800px;
-            margin: 0 auto;
-        }
-        #feed {
-            flex: 1;
-            padding: 24px 24px 48px 24px;
-            min-width: 0;
-        }
-        .feed-label {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: var(--text-3);
-            margin-bottom: 18px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .feed-label::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
+/* Risk Matrix */
+.risk-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.7rem; }
+.risk-table th { text-align: left; padding: 12px 14px; border-bottom: 2px solid var(--border); color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; background: var(--surface-raised); }
+.risk-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); color: var(--text-2); }
+.risk-bar-bg { flex:1; height:5px; background:var(--border); border-radius:2px; overflow:hidden; }
+.risk-bar-fill { height:100%; border-radius:2px; transition: width 0.8s ease; }
 
-        .grid-main {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 1px;
-            background: var(--border);
-        }
+/* Live TV */
+#live-tv-view { display: none; }
+.tv-hero { background: var(--near-black); border-bottom: 1px solid var(--border); padding: 20px 28px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.tv-hero-title { font-family: var(--font-brand); font-size: 1.4rem; letter-spacing: 6px; color: var(--gold); }
+.tv-continent-tabs { display: flex; padding: 0 24px; background: var(--black); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.ctab { background: none; border: none; color: var(--text-3); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 1.5px; text-transform: uppercase; padding: 14px 20px; cursor: pointer; }
+.ctab.on { color: var(--gold); border-bottom: 2px solid var(--gold); }
+.tv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; padding: 24px; }
+.tv-channel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.tv-channel-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--surface-raised); }
+.tv-channel-name { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-1); display: flex; align-items: center; gap: 8px; }
+.tv-live-dot { width: 7px; height: 7px; background: var(--red); border-radius: 50%; animation: blink 1.5s ease infinite; }
+.tv-iframe-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
+.tv-iframe-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
 
-        .card {
-            background: var(--surface);
-            padding: 20px 22px;
-            position: relative;
-            cursor: pointer;
-            transition: background 0.18s ease;
-            border-left: 2px solid transparent;
-            animation: cardIn 0.35s ease both;
-        }
-        .card:hover {
-            background: var(--surface-hover);
-            border-left-color: var(--gold);
-        }
-        .card.breaking {
-            border-left-color: var(--gold);
-            background: linear-gradient(135deg, #0b0900 0%, var(--surface) 60%);
-        }
-        @keyframes cardIn {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .c-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            gap: 10px;
-        }
-        .c-cat {
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            border: 1px solid;
-            padding: 2px 8px;
-            flex-shrink: 0;
-        }
-        .c-title {
-            font-family: var(--font-ui);
-            font-size: 1.1rem;
-            font-weight: 700;
-            line-height: 1.4;
-            color: var(--text-1);
-            margin-bottom: 10px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .c-summary {
-            font-family: var(--font-ui);
-            font-size: 0.85rem;
-            line-height: 1.6;
-            color: var(--text-2);
-            margin-bottom: 14px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .c-foot {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-top: 1px solid var(--border-subtle);
-            padding-top: 12px;
-            margin-top: auto;
-        }
-        .c-source {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--gold-dim);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .c-time {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--text-3);
-        }
-
-        /* Sidebar */
-        #sidebar {
-            width: var(--side);
-            flex-shrink: 0;
-            padding: 24px 0 40px 0;
-            border-left: 1px solid var(--border);
-            position: sticky;
-            top: var(--sticky-summit);
-            max-height: calc(100vh - var(--sticky-summit));
-            overflow-y: auto;
-        }
-        .s-section {
-            padding: 0 24px;
-            margin-bottom: 30px;
-        }
-        .s-title {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: var(--gold);
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .s-title::before {
-            content: '';
-            width: 4px;
-            height: 4px;
-            background: var(--gold);
-            flex-shrink: 0;
-        }
-        .tr-item {
-            display: flex;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-subtle);
-            cursor: pointer;
-        }
-        .tr-rank {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--gold-dim);
-            width: 22px;
-            flex-shrink: 0;
-        }
-        .tr-body {
-            flex: 1;
-            padding: 0 12px;
-        }
-        .tr-kw {
-            font-family: var(--font-ui);
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-2);
-        }
-        .tr-bar {
-            height: 2px;
-            background: var(--gold);
-            opacity: 0.25;
-            margin-top: 4px;
-        }
-        .tr-cnt {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--text-3);
-        }
-        .pulse-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 0;
-        }
-        .pulse-lbl {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--text-3);
-            width: 72px;
-        }
-        .pulse-bg {
-            flex: 1;
-            height: 3px;
-            background: var(--border);
-            border-radius: 1px;
-            overflow: hidden;
-        }
-        .pulse-fill {
-            height: 100%;
-            background: var(--gold);
-            border-radius: 1px;
-            transition: width 1.2s ease;
-        }
-        .pulse-n {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--gold-dim);
-            width: 24px;
-            text-align: right;
-        }
-        .src-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        .src-name {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--text-2);
-        }
-        .src-badge {
-            font-family: var(--font-mono);
-            font-size: 0.65rem;
-            color: var(--gold);
-            background: rgba(212, 175, 55, 0.06);
-            border: 1px solid rgba(212, 175, 55, 0.14);
-            padding: 1px 6px;
-        }
-
-        /* Sentiment */
-        #sentiment-widget {
-            background: var(--surface-raised);
-            border: 1px solid var(--border);
-            padding: 22px;
-            margin-bottom: 24px;
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .sentiment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-        }
-        .sentiment-label {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            color: var(--text-3);
-            text-transform: uppercase;
-        }
-        .sentiment-score {
-            font-family: var(--font-mono);
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--gold);
-        }
-        .sentiment-bar {
-            height: 5px;
-            background: linear-gradient(to right, #EF4444 0%, var(--gold-dim) 50%, #10B981 100%);
-            width: 100%;
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .sentiment-fill {
-            height: 100%;
-            background: var(--gold);
-            transition: width 1s ease-in-out;
-        }
-        .sentiment-details {
-            display: flex;
-            gap: 20px;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--text-3);
-        }
-
-        /* Markets */
-        .market-indices {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .index-card {
-            flex: 1;
-            min-width: 130px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-family: var(--font-mono);
-        }
-        #markets-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-        }
-        #markets-table th {
-            text-align: left;
-            padding: 10px 14px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-3);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 400;
-        }
-        #markets-table td {
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--border-subtle);
-            color: var(--text-2);
-            cursor: pointer;
-        }
-        .stock-row:hover {
-            background: var(--surface-hover);
-        }
-        .stock-up {
-            color: var(--green);
-        }
-        .stock-down {
-            color: var(--red);
-        }
-        #stock-detail {
-            margin-top: 24px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 20px;
-            max-height: 450px;
-            overflow: hidden;
-        }
-        #stock-detail canvas {
-            max-height: 350px;
-            width: 100% !important;
-        }
-
-        /* ═══════ TRADINGVIEW WIDGET CONTAINERS ═══════ */
-        .tv-widget-container {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            margin-bottom: 20px;
-            border-radius: 2px;
-            overflow: hidden;
-            min-height: 400px;
-        }
-        .tv-widget-container iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        #tv-advanced-chart {
-            height: 500px;
-        }
-        #tv-market-overview {
-            height: 450px;
-        }
-        #tv-forex-heatmap {
-            height: 500px;
-        }
-        #tv-economic-calendar {
-            height: 600px;
-        }
-        #tv-ticker-tape {
-            height: 44px;
-            margin-bottom: 0;
-            border-bottom: none;
-        }
-
-        /* ═══════ FOREX PANEL ═══════ */
-        .forex-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1px;
-            background: var(--border);
-            margin-bottom: 24px;
-        }
-        .forex-card {
-            background: var(--surface);
-            padding: 18px 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            font-family: var(--font-mono);
-            transition: background 0.2s;
-            cursor: pointer;
-        }
-        .forex-card:hover {
-            background: var(--surface-hover);
-        }
-        .forex-pair {
-            font-size: 0.75rem;
-            color: var(--gold);
-            letter-spacing: 1px;
-        }
-        .forex-price {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--text-1);
-        }
-        .forex-change {
-            font-size: 0.7rem;
-        }
-        .forex-spark {
-            height: 36px;
-            margin-top: 4px;
-        }
-        .forex-spark canvas {
-            width: 100%;
-            height: 36px;
-        }
-
-        /* ═══════ LIVE TV PAGE ═══════ */
-        #live-tv-view {
-            display: none;
-            width: 100%;
-            padding: 0;
-        }
-        .tv-hero {
-            background: var(--near-black);
-            border-bottom: 1px solid var(--border);
-            padding: 20px 28px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .tv-hero-title {
-            font-family: var(--font-brand);
-            font-size: 1.4rem;
-            letter-spacing: 6px;
-            color: var(--gold);
-            text-shadow: 0 0 20px var(--gold-glow);
-        }
-        .tv-hero-sub {
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--text-3);
-            letter-spacing: 2px;
-        }
-        .tv-hero-live {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--red);
-            animation: blink 1.5s ease infinite;
-        }
-        .tv-continent-tabs {
-            display: flex;
-            gap: 0;
-            padding: 0 24px;
-            background: var(--black);
-            border-bottom: 1px solid var(--border);
-            overflow-x: auto;
-            position: sticky;
-            top: calc(var(--tick)*2 + var(--hdr) + var(--tabs));
-            z-index: 90;
-        }
-        .ctab {
-            background: none;
-            border: none;
-            color: var(--text-3);
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 14px 20px;
-            cursor: pointer;
-            position: relative;
-            white-space: nowrap;
-            transition: color 0.2s;
-        }
-        .ctab::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--gold);
-            transform: scaleX(0);
-            transition: transform 0.2s;
-        }
-        .ctab.on {
-            color: var(--gold);
-        }
-        .ctab.on::after {
-            transform: scaleX(1);
-        }
-        .ctab:hover:not(.on) {
-            color: var(--text-2);
-        }
-        .tv-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 16px;
-            padding: 24px;
-            max-width: 1800px;
-            margin: 0 auto;
-        }
-        .tv-channel-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            overflow: hidden;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            display: flex;
-            flex-direction: column;
-        }
-        .tv-channel-card:hover {
-            border-color: var(--gold-dim);
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.06);
-        }
-        .tv-channel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background: var(--surface-raised);
-            border-bottom: 1px solid var(--border-subtle);
-            gap: 10px;
-        }
-        .tv-channel-name {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            font-weight: 700;
-            color: var(--text-1);
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .tv-live-dot {
-            width: 7px;
-            height: 7px;
-            background: var(--red);
-            border-radius: 50%;
-            box-shadow: 0 0 6px var(--red);
-            animation: blink 1.5s ease infinite;
-            flex-shrink: 0;
-        }
-        .tv-channel-country {
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
-            color: var(--text-3);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            flex-shrink: 0;
-        }
-        .tv-iframe-wrapper {
-            position: relative;
-            width: 100%;
-            padding-top: 56.25%;
-            background: #000;
-            flex-shrink: 0;
-        }
-        .tv-iframe-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .tv-channel-footer {
-            padding: 10px 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-top: 1px solid var(--border-subtle);
-            font-family: var(--font-mono);
-            font-size: 0.65rem;
-            color: var(--text-3);
-        }
-        .tv-watch-btn {
-            background: transparent;
-            border: 1px solid var(--gold-dim);
-            color: var(--gold);
-            padding: 5px 12px;
-            font-family: var(--font-mono);
-            font-size: 0.6rem;
-            letter-spacing: 1px;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.2s;
-        }
-        .tv-watch-btn:hover {
-            background: var(--gold-faint);
-            border-color: var(--gold);
-        }
-        .tv-info-banner {
-            background: var(--surface-raised);
-            border: 1px solid var(--border);
-            border-left: 3px solid var(--gold);
-            padding: 14px 20px;
-            margin: 0 24px 0 24px;
-            border-radius: 2px;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            color: var(--text-2);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .tv-info-banner span {
-            color: var(--gold);
-        }
-
-        /* Category colours */
-        .cat-core {
-            --cat-color: var(--text-2);
-        }
-        .cat-ai {
-            --cat-color: #F2CC54;
-        }
-        .cat-security {
-            --cat-color: #EF4444;
-        }
-        .cat-market {
-            --cat-color: #10B981;
-        }
-        .cat-dev {
-            --cat-color: #3B82F6;
-        }
-        .c-cat {
-            color: var(--cat-color);
-            border-color: var(--cat-color);
-            background: color-mix(in srgb, var(--cat-color), transparent 90%);
-        }
-
-        /* Map */
-        #map-container {
-            position: relative;
-            width: 100%;
-            background: var(--near-black);
-            border: 1px solid var(--border);
-        }
-        #map-svg-container svg {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        #footer {
-            border-top: 1px solid var(--border);
-            padding: 20px 28px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .ft-brand {
-            font-family: var(--font-brand);
-            font-size: 0.9rem;
-            letter-spacing: 5px;
-            color: var(--gold-dim);
-        }
-        .ft-txt {
-            font-family: var(--font-mono);
-            color: var(--text-3);
-            letter-spacing: 1px;
-        }
-
-        /* Bloomberg panel */
-        .bloomberg-panel {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-left: 3px solid #F5A623;
-            padding: 18px 20px;
-            margin-bottom: 20px;
-            border-radius: 2px;
-        }
-        .bloomberg-panel .bp-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            color: #F5A623;
-            text-transform: uppercase;
-        }
-        .bp-headlines {
-            list-style: none;
-            padding: 0;
-        }
-        .bp-headlines li {
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border-subtle);
-            font-family: var(--font-ui);
-            font-size: 0.85rem;
-            color: var(--text-2);
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        .bp-headlines li:hover {
-            color: var(--text-1);
-        }
-        .bp-headlines li::before {
-            content: '◆ ';
-            color: #F5A623;
-            font-size: 0.5rem;
-        }
-
-        @media (max-width: 1200px) {
-            #sidebar {
-                display: none;
-            }
-            .tv-grid {
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            }
-        }
-        @media (max-width: 768px) {
-            .brand-tag {
-                display: none;
-            }
-            .grid-main {
-                grid-template-columns: 1fr;
-            }
-            .tv-grid {
-                grid-template-columns: 1fr;
-                padding: 12px;
-            }
-            .tv-hero {
-                padding: 14px 16px;
-                gap: 10px;
-            }
-            .tv-hero-title {
-                font-size: 1rem;
-                letter-spacing: 3px;
-            }
-            #tabs {
-                gap: 0;
-            }
-            .tab {
-                padding: 12px 10px;
-                font-size: 0.6rem;
-                letter-spacing: 1px;
-            }
-            .ctab {
-                padding: 10px 12px;
-                font-size: 0.6rem;
-            }
-            .forex-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            }
-            .market-indices {
-                flex-direction: column;
-            }
-        }
-    </style>
+@media (max-width: 1100px) { #sidebar { display: none; } .tv-grid { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .brand-tag { display: none; } .grid-main { grid-template-columns: 1fr; } }
+</style>
 </head>
 <body>
 
-    <div id="loading"><div class="ld-logo">NEXON</div><div class="ld-sub">Intelligence Terminal</div><div class="ld-bar"></div><div class="ld-status" id="ld-status">Connecting...</div></div>
+<div id="loading"><div class="ld-logo">NEXON</div><div class="ld-sub">Intelligence Terminal</div><div class="ld-bar"></div><div class="ld-status" id="ld-status">Connecting...</div></div>
 
-    <!-- News Ticker -->
-    <div id="ticker-news" class="ticker-row">
-        <div class="tick-label"><span class="tick-dot"></span>NEWS</div>
-        <div class="tick-scroll"><div class="tick-inner" id="ticker-inner"></div></div>
+<div id="ticker-news"><div class="tick-label"><span class="tick-dot"></span>NEWS</div><div class="tick-scroll"><div class="tick-inner" id="ticker-inner"></div></div></div>
+<div id="ticker-stocks"><div class="tick-label">STOCKS</div><div class="tick-scroll"><div class="tick-inner" id="stock-ticker-inner"></div></div></div>
+
+<div id="header">
+  <div class="brand"><span class="brand-name">NEXON</span><span class="brand-tag">PULSE</span></div>
+  <div class="hdr-right">
+    <span id="last-upd">--</span>
+    <button class="refresh-btn" onclick="socket.emit('request_refresh')">↻ Refresh</button>
+  </div>
+</div>
+
+<div id="tabs">
+  <button class="tab on" data-view="feed">Feed</button>
+  <button class="tab" data-view="markets">Markets+</button>
+  <button class="tab" data-view="forex">Forex</button>
+  <button class="tab" data-view="riskmatrix">Risk Matrix</button>
+  <button class="tab" data-view="vulns">Vulnerabilities</button>
+  <button class="tab" data-view="companies">Companies</button>
+  <button class="tab" data-view="briefing">Briefing</button>
+  <button class="tab tab-new" data-view="live-tv">📡 Live TV</button>
+</div>
+
+<div id="sbar">
+  <div class="sb-item"><span class="sb-label">Threats</span><span class="sb-val" id="stat-threats">0</span></div>
+  <div class="sb-item"><span class="sb-label">Incidents</span><span class="sb-val" id="stat-incidents">0</span></div>
+  <div class="sb-item"><span class="sb-label">Articles</span><span class="sb-val" id="stat-articles">0</span></div>
+  <div class="sb-right"><span>Next refresh</span><span id="countdown">--</span></div>
+</div>
+
+<div id="layout">
+  <div id="feed">
+    <div class="feed-label">Latest Intelligence</div>
+    <div id="cards-container" class="grid-main"></div>
+    <div id="markets-view" style="display:none;"></div>
+    <div id="forex-view" style="display:none;"></div>
+    <div id="riskmatrix-view" style="display:none;"></div>
+    <div id="vulns-view" style="display:none;"></div>
+    <div id="companies-view" style="display:none;"></div>
+    <div id="briefing-view" style="display:none;"></div>
+    <div id="live-tv-view"></div>
+  </div>
+  <div id="sidebar">
+    <div class="s-section"><div class="s-title">Trending Threats</div><div id="trending-list"></div></div>
+    <div class="s-section"><div class="s-title">Bloomberg</div><div id="bloomberg-list"></div></div>
+    <div class="s-section"><div class="s-title">Stock Drops</div><div id="stock-drops-list"></div></div>
+  </div>
+</div>
+
+<div id="footer"><div class="ft-brand">NEXON PULSE</div><div class="ft-txt">© 2026 Intelligence Terminal · TradingView · Bloomberg · Live Data</div></div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+// ═══════════ SOCKET CONNECTION ═══════════
+const socket = io(); // Auto-connects to same origin (works on Render)
+
+let state = { threats:[], vulns:[], companies:[], briefings:[], ticker_news:[], stocks:{}, stock_history:{}, forex:{}, articles:[], drop_analysis:{}, incidents:0, last_updated:null };
+let currentView = 'feed';
+let refreshCountdown = 300;
+let currentContinent = 'americas';
+
+socket.on('live_data', data => {
+  state = { ...state, ...data };
+  if (data.last_updated) {
+    document.getElementById('last-upd').textContent = new Date(data.last_updated).toLocaleTimeString();
+    refreshCountdown = 300;
+  }
+  updateUI();
+});
+
+socket.on('stock_update', data => {
+  state.stocks = data.stocks;
+  updateStockTicker();
+  if (currentView === 'markets') renderMarkets();
+});
+
+socket.on('forex_update', data => {
+  state.forex = data.forex;
+  if (currentView === 'forex') renderForex();
+});
+
+socket.on('connect', () => {
+  document.getElementById('ld-status').textContent = 'Connected';
+  setTimeout(() => document.getElementById('loading').classList.add('out'), 600);
+});
+
+function updateUI() {
+  updateNewsTicker();
+  updateStockTicker();
+  updateStatsBar();
+  renderCurrentView();
+  updateSidebar();
+}
+
+function updateNewsTicker() {
+  const inner = document.getElementById('ticker-inner');
+  const items = state.ticker_news || [];
+  if (!items.length) return;
+  const double = [...items, ...items];
+  inner.innerHTML = double.map(t => `<span class="tick-item"><span class="tick-cat">CYBER</span>${t}</span>`).join('');
+}
+
+function updateStockTicker() {
+  const inner = document.getElementById('stock-ticker-inner');
+  const symbols = Object.keys(state.stocks);
+  if (!symbols.length) { inner.innerHTML = '<span class="tick-item">Loading stocks...</span>'; return; }
+  const items = symbols.map(sym => {
+    const q = state.stocks[sym];
+    if (!q || q.price == null) return '';
+    const change = q.change ? (q.change>0?'+':'') + q.change.toFixed(2) : '—';
+    const color = q.change>0 ? 'var(--green)' : q.change<0 ? 'var(--red)' : 'var(--text-3)';
+    return `<span class="tick-item"><span class="tick-cat">${sym}</span>$${q.price.toFixed(2)} <span style="color:${color}">${change}</span></span>`;
+  }).filter(Boolean);
+  const double = [...items, ...items];
+  inner.innerHTML = double.join('');
+}
+
+function updateStatsBar() {
+  document.getElementById('stat-threats').textContent = state.threats.length;
+  document.getElementById('stat-incidents').textContent = state.incidents;
+  document.getElementById('stat-articles').textContent = state.articles.length;
+}
+
+function updateSidebar() {
+  // Trending threats
+  const trends = (state.threats || []).slice(0,5);
+  document.getElementById('trending-list').innerHTML = trends.map((t,i) => `
+    <div class="tr-item"><span class="tr-rank">0${i+1}</span><div class="tr-body"><div class="tr-kw">${t.name?.substring(0,25)||'—'}</div><div class="tr-bar" style="width:${100-i*15}%"></div></div><span class="tr-cnt">${t.sev}</span></div>
+  `).join('') || '<div style="color:var(--text-3);font-size:0.7rem;">Loading...</div>';
+
+  // Bloomberg headlines (from backend RSS)
+  const bloombergArticles = (state.articles || []).filter(a => a.category === 'bloomberg' || (a.source||'').toLowerCase().includes('bloomberg'));
+  document.getElementById('bloomberg-list').innerHTML = bloombergArticles.slice(0,6).map(a => `
+    <div class="tr-item" onclick="window.open('${a.link}','_blank')"><div class="tr-body"><div class="tr-kw" style="font-size:0.75rem;">◆ ${a.title.substring(0,70)}</div></div></div>
+  `).join('') || '<div style="color:var(--text-3);font-size:0.7rem;">Loading Bloomberg...</div>';
+
+  // Stock drops analysis
+  const drops = state.drop_analysis || {};
+  const dropEntries = Object.entries(drops).sort((a,b) => (a[1].drop_pct||0) - (b[1].drop_pct||0));
+  document.getElementById('stock-drops-list').innerHTML = dropEntries.slice(0,6).map(([sym, data]) => `
+    <div class="tr-item"><span class="tr-rank" style="color:var(--red);">↓</span><div class="tr-body"><div class="tr-kw">${sym} <span style="color:var(--red);font-size:0.7rem;">${data.drop_pct}%</span></div><div style="font-size:0.6rem;color:var(--text-3);">${(data.related_news||[])[0]?.substring(0,50)||'Market movement'}</div></div></div>
+  `).join('') || '<div style="color:var(--text-3);font-size:0.7rem;">No significant drops</div>';
+}
+
+// ═══════════ VIEW ROUTING ═══════════
+function renderCurrentView() {
+  ['cards-container','markets-view','forex-view','riskmatrix-view','vulns-view','companies-view','briefing-view','live-tv-view'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  const sidebar = document.getElementById('sidebar');
+  const layout = document.getElementById('layout');
+  if (sidebar) sidebar.style.display = (currentView === 'live-tv') ? 'none' : '';
+  if (layout) layout.style.maxWidth = (currentView === 'live-tv') ? '100%' : '1800px';
+
+  switch(currentView) {
+    case 'feed': document.getElementById('cards-container').style.display = ''; renderFeed(); break;
+    case 'markets': document.getElementById('markets-view').style.display = ''; renderMarkets(); break;
+    case 'forex': document.getElementById('forex-view').style.display = ''; renderForex(); break;
+    case 'riskmatrix': document.getElementById('riskmatrix-view').style.display = ''; renderRiskMatrix(); break;
+    case 'vulns': document.getElementById('vulns-view').style.display = ''; renderVulns(); break;
+    case 'companies': document.getElementById('companies-view').style.display = ''; renderCompanies(); break;
+    case 'briefing': document.getElementById('briefing-view').style.display = ''; renderBriefing(); break;
+    case 'live-tv': document.getElementById('live-tv-view').style.display = ''; renderLiveTV(); break;
+  }
+}
+
+function renderFeed() {
+  const container = document.getElementById('cards-container');
+  container.innerHTML = (state.articles || []).map((a,i) => {
+    const typeClass = a.category === 'cybersecurity' ? 'cat-security' : (a.category==='technology'?'cat-dev':'cat-market');
+    return `<div class="card ${i===0?'breaking':''}" onclick="window.open('${a.link}','_blank')">
+      <div class="c-top"><span class="c-cat ${typeClass}">${a.type||'NEWS'}</span><span class="c-time">${a.published?new Date(a.published).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}</span></div>
+      <div class="c-title">${a.title}</div>
+      <div class="c-summary">${(a.summary||'').substring(0,150)}</div>
+      <div class="c-foot"><span class="c-source">${a.source}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ── MARKETS ──
+function renderMarkets() {
+  const div = document.getElementById('markets-view');
+  div.innerHTML = `
+    <div class="feed-label">TradingView · Market Overview</div>
+    <div class="tv-widget-container" style="height:450px;">
+      <iframe class="tv-widget-frame" height="450" src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.html?colorTheme=dark&dateRange=12M&locale=en&isTransparent=true&tabs=Indices,Tech,Cyber&symbols=FOREXCOM:SPXUSD|NASDAQ:NDX|FOREXCOM:DJI|NASDAQ:AAPL|NASDAQ:MSFT|NASDAQ:NVDA|NASDAQ:CRWD|NASDAQ:PANW|NASDAQ:ZS&width=100%25&height=100%25"></iframe>
     </div>
+    <div class="feed-label">Cybersecurity & Tech Stocks</div>
+    <div style="overflow-x:auto;"><table id="markets-table" style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:0.75rem;">
+      <thead><tr style="background:var(--surface-raised);"><th style="padding:10px;text-align:left;color:var(--gold);">Symbol</th><th style="padding:10px;text-align:left;">Price</th><th style="padding:10px;text-align:left;">Change</th><th style="padding:10px;text-align:left;">30D Trend</th></tr></thead>
+      <tbody id="markets-tbody"></tbody>
+    </table></div>`;
+  
+  const tbody = document.getElementById('markets-tbody');
+  const symbols = Object.keys(state.stocks);
+  tbody.innerHTML = symbols.length ? symbols.map(sym => {
+    const q = state.stocks[sym];
+    if (!q || q.price == null) return '';
+    const change = q.change || 0;
+    const cls = change >= 0 ? 'var(--green)' : 'var(--red)';
+    return `<tr class="stock-row" style="border-bottom:1px solid var(--border-subtle);cursor:pointer;" onclick="window.open('https://www.tradingview.com/chart/?symbol=NASDAQ:${sym}','_blank')">
+      <td style="padding:10px;color:var(--gold);">${sym}</td>
+      <td style="padding:10px;">$${q.price.toFixed(2)}</td>
+      <td style="padding:10px;color:${cls};">${change>=0?'+':''}${change.toFixed(2)}</td>
+      <td style="padding:10px;"><canvas id="spark-${sym}" width="80" height="24"></canvas></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="4" style="padding:20px;color:var(--text-3);">Loading stocks...</td></tr>';
 
-    <!-- Stock Ticker -->
-    <div id="ticker-stocks" class="ticker-row">
-        <div class="tick-label">STOCKS</div>
-        <div class="tick-scroll"><div class="tick-inner" id="stock-ticker-inner" style="animation-duration:120s;"></div></div>
+  // Sparklines
+  symbols.forEach(sym => {
+    const history = state.stock_history?.[sym] || [];
+    if (history.length < 2) return;
+    const canvas = document.getElementById(`spark-${sym}`);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, { type:'line', data:{labels:history.map((_,i)=>i),datasets:[{data:history,borderColor:'#D4AF37',borderWidth:1,pointRadius:0,tension:0.4}]}, options:{responsive:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},animation:false} });
+  });
+}
+
+// ── FOREX ──
+function renderForex() {
+  const div = document.getElementById('forex-view');
+  const forex = state.forex || {};
+  const pairs = Object.keys(forex);
+  div.innerHTML = `
+    <div class="feed-label">Forex · Live Rates</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1px;background:var(--border);margin-bottom:20px;">
+      ${pairs.length ? pairs.map(p => `<div style="background:var(--surface);padding:18px;font-family:var(--font-mono);">
+        <div style="color:var(--gold);font-size:0.7rem;">${p.replace('=X','')}</div>
+        <div style="font-size:1.2rem;color:var(--text-1);">${forex[p]?.price?.toFixed(5)||'—'}</div>
+      </div>`).join('') : '<div style="padding:20px;color:var(--text-3);">Loading forex...</div>'}
     </div>
-
-    <div id="header">
-        <div class="brand"><span class="brand-name">NEXON</span><span class="brand-tag">PULSE</span></div>
-        <div class="hdr-right">
-            <div class="live-badge"><span id="threat-level-dot" style="width:10px;height:10px;border-radius:50%;background:var(--gold);"></span><span id="threat-level-text">ELEVATED</span></div>
-            <span id="last-upd">--</span>
-            <button class="refresh-btn" onclick="socket.emit('request_refresh')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg> <span>Refresh</span></button>
-        </div>
+    <div class="feed-label">TradingView · Forex Heat Map</div>
+    <div class="tv-widget-container" style="height:450px;">
+      <iframe class="tv-widget-frame" height="450" src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.html?colorTheme=dark&dateRange=12M&locale=en&isTransparent=true&currencies=EUR,USD,JPY,GBP,CHF,AUD,CAD,NZD&width=100%25&height=100%25"></iframe>
     </div>
+    <div class="feed-label">Economic Calendar</div>
+    <div class="tv-widget-container" style="height:550px;">
+      <iframe class="tv-widget-frame" height="550" src="https://s3.tradingview.com/external-embedding/embed-widget-events.html?colorTheme=dark&isTransparent=true&locale=en&importanceFilter=-1,0,1&countryFilter=US,EU,GB,JP,CN,AU&width=100%25&height=100%25"></iframe>
+    </div>`;
+}
 
-    <div id="tabs">
-        <button class="tab on" data-view="feed">Feed</button>
-        <button class="tab" data-view="markets">Markets+</button>
-        <button class="tab" data-view="forex">Forex</button>
-        <button class="tab" data-view="vulns">Vulnerabilities</button>
-        <button class="tab" data-view="companies">Companies</button>
-        <button class="tab" data-view="map">Map</button>
-        <button class="tab" data-view="briefing">Briefing</button>
-        <button class="tab tab-new" data-view="live-tv">📡 Live TV</button>
-    </div>
+// ── RISK MATRIX (replaces Map) ──
+function renderRiskMatrix() {
+  const div = document.getElementById('riskmatrix-view');
+  const stocks = state.stocks || {};
+  const threats = state.threats || [];
+  const vulns = state.vulns || [];
+  
+  const matrix = Object.keys(stocks).map(ticker => {
+    const q = stocks[ticker];
+    const price = q?.price || 0;
+    const change = q?.change || 0;
+    const relatedThreats = threats.filter(t => (t.affected_stocks||[]).includes(ticker));
+    const relatedVulns = vulns.filter(v => (v.affected_stocks||[]).includes(ticker));
+    const threatScore = relatedThreats.length * 25;
+    const vulnScore = relatedVulns.length * 20;
+    const dropScore = change < 0 ? Math.abs(change) * 5 : 0;
+    const totalRisk = Math.min(100, threatScore + vulnScore + dropScore);
+    return { ticker, price, change, totalRisk, threatCount: relatedThreats.length, vulnCount: relatedVulns.length, topThreat: relatedThreats[0]?.name || '—' };
+  }).sort((a,b) => b.totalRisk - a.totalRisk);
 
-    <div id="sbar">
-        <div class="sb-item"><span class="sb-label">Threats</span><span class="sb-val" id="stat-threats">0</span></div>
-        <div class="sb-item"><span class="sb-label">Incidents</span><span class="sb-val" id="stat-incidents">0</span></div>
-        <div class="sb-item"><span class="sb-label">Articles</span><span class="sb-val" id="stat-articles">0</span></div>
-        <div class="sb-item"><span class="sb-label">Sources</span><span class="sb-val" id="stat-sources">80</span></div>
-        <div class="sb-right"><span>Next refresh in</span><span id="countdown">--</span></div>
-    </div>
-
-    <div id="layout">
-        <div id="feed">
-            <div id="sentiment-widget">
-                <div class="sentiment-header"><span class="sentiment-label">Market Sentiment</span><span class="sentiment-score" id="sentiment-score">0.62</span></div>
-                <div class="sentiment-bar"><div class="sentiment-fill" id="sentiment-fill" style="width:62%"></div></div>
-                <div class="sentiment-details"><span>BULLISH</span><span id="sentiment-bull">62%</span><span>BEARISH</span><span id="sentiment-bear">38%</span></div>
-            </div>
-            <div class="feed-label">Latest Intelligence</div>
-            <div id="cards-container" class="grid-main"></div>
-            <div id="markets-view" style="display:none;"></div>
-            <div id="forex-view" style="display:none;"></div>
-            <div id="vulns-view" style="display:none;"></div>
-            <div id="companies-view" style="display:none;"></div>
-            <div id="map-view" style="display:none;">
-                <div id="map-container"><div id="map-svg-container"></div></div>
-            </div>
-            <div id="briefing-view" style="display:none;"></div>
-            <div id="live-tv-view"></div>
-        </div>
-
-        <div id="sidebar">
-            <div class="s-section">
-                <div class="s-title">Trending</div>
-                <div id="trending-list"></div>
-            </div>
-            <div class="s-section">
-                <div class="s-title">Risk Pulse</div>
-                <div id="pulse-list"></div>
-            </div>
-            <div class="s-section">
-                <div class="s-title">Sources</div>
-                <div id="sources-list"></div>
-            </div>
-            <div class="s-section">
-                <div class="s-title">Bloomberg</div>
-                <div id="bloomberg-panel-sidebar"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="footer">
-        <div class="ft-brand">NEXON PULSE</div>
-        <div class="ft-txt">© 2026 Intelligence Terminal · TradingView · Bloomberg · Forex Factory · 80+ Sources</div>
-    </div>
-
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js">
-    </script>
-    <script>
-        // ═══════════ EMBEDDED WORLD MAP SVG ═══════════
-        const WORLD_MAP_SVG = `<svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg">
-      <rect width="1000" height="500" fill="#0c0c0c"/>
-      <path d="M150,180 L220,150 L280,140 L340,160 L380,200 L400,260 L380,340 L320,380 L260,390 L200,370 L150,340 L120,300 L100,260 L110,210 Z" fill="none" stroke="#1e1e1e" stroke-width="1.2"/>
-      <path d="M280,400 L320,390 L360,420 L380,470 L370,510 L340,540 L300,540 L270,510 L260,460 L270,420 Z" fill="none" stroke="#1e1e1e" stroke-width="1.2"/>
-      <path d="M420,150 L480,130 L540,140 L580,170 L590,210 L570,250 L530,270 L480,260 L440,240 L410,210 L400,180 Z" fill="none" stroke="#1e1e1e" stroke-width="1.2"/>
-      <path d="M440,280 L500,270 L550,290 L580,330 L590,380 L570,440 L530,480 L480,490 L440,470 L410,430 L400,380 L410,330 Z" fill="none" stroke="#1e1e1e" stroke-width="1.2"/>
-      <path d="M600,120 L720,90 L820,110 L880,150 L920,210 L930,280 L900,340 L840,380 L780,390 L720,370 L660,340 L620,300 L590,240 L580,180 Z" fill="none" stroke="#1e1e1e" stroke-width="1.2"/>
-      <path d="M750,430 L820,410 L870,430 L890,470 L870,510 L820,530 L760,520 L740,490 L740,450 Z" fill="none" stroke="#1e1e1e" stroke-width="1.2"/>
-      <path d="M100,550 L900,550" fill="none" stroke="#1e1e1e" stroke-width="1"/>
-    </svg>`;
-
-        // ═══════════ LIVE TV CHANNELS BY CONTINENT ═══════════
-        // All channels are 24/7 live news on YouTube — no mocks, real streams only
-        const LIVE_TV_CHANNELS = {
-            'americas': {
-                label: 'Americas',
-                channels: [
-                    { name: 'Bloomberg Television',
-                        country: 'USA',
-                        ytChannelId: 'UCIALMKvObZNtJ6AmdCLP7Lg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg',
-                        description: 'Global business & financial news 24/7' },
-                    { name: 'CNBC Television', country: 'USA', ytChannelId: 'UCrp_UIK1lssBZq0w6x0GQRA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCrp_UIK1lssBZq0w6x0GQRA',
-                        description: 'Real-time financial market coverage' },
-                    { name: 'Fox News', country: 'USA', ytChannelId: 'UCXIJgqnII2ZOINSWNOGFThA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCXIJgqnII2ZOINSWNOGFThA',
-                        description: 'Breaking news & political analysis' },
-                    { name: 'ABC News Live', country: 'USA', ytChannelId: 'UCBi2mrWuNuyYy4gbM6fU18Q',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q',
-                        description: '24/7 streaming news coverage' },
-                    { name: 'CBS News 24/7', country: 'USA', ytChannelId: 'UC8p1vwPD8hEiReN5Yz1P3JA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC8p1vwPD8hEiReN5Yz1P3JA',
-                        description: 'Continuous news streaming' },
-                    { name: 'NBC News', country: 'USA', ytChannelId: 'UCeY0G5L6Ux3e2qH5cMp6hPA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCeY0G5L6Ux3e2qH5cMp6hPA',
-                        description: 'Breaking news & top stories' },
-                    { name: 'Yahoo Finance', country: 'USA', ytChannelId: 'UCEAZeUIeJs0IjQiqTCVSIAA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCEAZeUIeJs0IjQiqTCVSIAA',
-                        description: 'Live market coverage & analysis' },
-                    { name: 'Reuters', country: 'USA', ytChannelId: 'UChqUTb7kYRX8-EiaN3XFrSQ',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UChqUTb7kYRX8-EiaN3XFrSQ',
-                        description: 'Global news from Reuters' },
-                ]
-            },
-            'europe': {
-                label: 'Europe',
-                channels: [
-                    { name: 'BBC News', country: 'UK', ytChannelId: 'UC16niRr50-MSBwiO3YDb3RA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC16niRr50-MSBwiO3YDb3RA',
-                        description: 'British public service broadcasting' },
-                    { name: 'Sky News', country: 'UK', ytChannelId: 'UCiMiqaAfll3BKzP4Mf8qxIg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCiMiqaAfll3BKzP4Mf8qxIg',
-                        description: 'UK & world news 24/7' },
-                    { name: 'DW News', country: 'Germany', ytChannelId: 'UCknLrEdhRCp1aegoMqRaCZg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCknLrEdhRCp1aegoMqRaCZg',
-                        description: 'Deutsche Welle international news' },
-                    { name: 'France 24 English', country: 'France', ytChannelId: 'UCQfwfsi5VrQ8yKZ-UWmAEFg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCQfwfsi5VrQ8yKZ-UWmAEFg',
-                        description: 'French international news in English' },
-                    { name: 'Euronews', country: 'EU', ytChannelId: 'UCW2QcKZiU8aUGg4yxCIditg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCW2QcKZiU8aUGg4yxCIditg',
-                        description: 'Pan-European news coverage' },
-                    { name: 'Channel 4 News', country: 'UK', ytChannelId: 'UCmJ6eP-NSdUQp_mz1HkHn7w',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCmJ6eP-NSdUQp_mz1HkHn7w',
-                        description: 'Award-winning British journalism' },
-                    { name: 'GB News', country: 'UK', ytChannelId: 'UC0XQJtEXLhXzsJXeL7s8cNQ',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC0XQJtEXLhXzsJXeL7s8cNQ',
-                        description: 'British news & opinion' },
-                ]
-            },
-            'asia-pacific': {
-                label: 'Asia-Pacific',
-                channels: [
-                    { name: 'WION', country: 'India', ytChannelId: 'UC_gUM8rL-Lrg6O3adPW9K1g',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC_gUM8rL-Lrg6O3adPW9K1g',
-                        description: 'World is One News — global perspective' },
-                    { name: 'CNA', country: 'Singapore', ytChannelId: 'UC83jt4dlz1Gq58xy0U9xU0A',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC83jt4dlz1Gq58xy0U9xU0A',
-                        description: 'Channel News Asia 24/7' },
-                    { name: 'NHK World Japan', country: 'Japan', ytChannelId: 'UCSPEjw8F2nQDtmUKPFNF7_A',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCSPEjw8F2nQDtmUKPFNF7_A',
-                        description: 'Japanese public broadcaster in English' },
-                    { name: 'ABC News Australia', country: 'Australia', ytChannelId: 'UCVgO39Bk5sMo66-6o6Spn6Q',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCVgO39Bk5sMo66-6o6Spn6Q',
-                        description: 'Australian Broadcasting Corporation' },
-                    { name: 'Arirang News', country: 'South Korea', ytChannelId: 'UC8N0DhVEf2I4eyxVp4WEgBA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC8N0DhVEf2I4eyxVp4WEgBA',
-                        description: 'Korea\'s global news network' },
-                    { name: 'Firstpost', country: 'India', ytChannelId: 'UCz8QaiQInZ2R5jR3s5qZxVw',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCz8QaiQInZ2R5jR3s5qZxVw',
-                        description: 'Indian news & global analysis' },
-                    { name: 'ANI News', country: 'India', ytChannelId: 'UCtFQDgA_eeVq3KInqMYIq0Q',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCtFQDgA_eeVq3KInqMYIq0Q',
-                        description: 'Asian News International live' },
-                ]
-            },
-            'middle-east': {
-                label: 'Middle East',
-                channels: [
-                    { name: 'Al Jazeera English', country: 'Qatar', ytChannelId: 'UCNye-wNBqNL5ZzHSJj3l8Bg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCNye-wNBqNL5ZzHSJj3l8Bg',
-                        description: 'Award-winning international news' },
-                    { name: 'TRT World', country: 'Turkey', ytChannelId: 'UC7fWeaHhqgM4Ry-RMpM2YYw',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC7fWeaHhqgM4Ry-RMpM2YYw',
-                        description: 'Turkish Radio & Television in English' },
-                    { name: 'i24 News English', country: 'Israel', ytChannelId: 'UCB2Jj2_RwMpEa6B0lSXzNQA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCB2Jj2_RwMpEa6B0lSXzNQA',
-                        description: 'Israeli international news channel' },
-                    { name: 'Al Arabiya English', country: 'UAE', ytChannelId: 'UCqo1gI0Ml5Hq4k6j_Ik1KjA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCqo1gI0Ml5Hq4k6j_Ik1KjA',
-                        description: 'Pan-Arab news in English' },
-                    { name: 'Middle East Eye', country: 'UK/MENA', ytChannelId: 'UCR0fLk8jzJG9EXq6iYJRN7g',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCR0fLk8jzJG9EXq6iYJRN7g',
-                        description: 'Independent Middle East coverage' },
-                    { name: 'ILTV Israel News', country: 'Israel', ytChannelId: 'UCzC6K9e3o3kETlDgX4sxGBQ',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCzC6K9e3o3kETlDgX4sxGBQ',
-                        description: 'Israel news & updates' },
-                    { name: 'Press TV', country: 'Iran', ytChannelId: 'UCf1vekol2H9XE4QfuXsW_EA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCf1vekol2H9XE4QfuXsW_EA',
-                        description: 'Iranian international news network' },
-                ]
-            },
-            'africa': {
-                label: 'Africa',
-                channels: [
-                    { name: 'SABC News', country: 'South Africa', ytChannelId: 'UC8yH4JmI6jE0hUg8JhK0J6g',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC8yH4JmI6jE0hUg8JhK0J6g',
-                        description: 'South African Broadcasting Corporation' },
-                    { name: 'Channels Television', country: 'Nigeria', ytChannelId: 'UC3gNQxYi6eQH8JPxX9j5M6A',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC3gNQxYi6eQH8JPxX9j5M6A',
-                        description: 'Nigeria\'s leading news channel' },
-                    { name: 'Arise News', country: 'Nigeria', ytChannelId: 'UC8wvYvRQJhE_KjTgPKhZGsw',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC8wvYvRQJhE_KjTgPKhZGsw',
-                        description: 'Pan-African news network' },
-                    { name: 'TV360 Nigeria', country: 'Nigeria', ytChannelId: 'UCf3hDxTHRQLgNvAjIYqD7cA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCf3hDxTHRQLgNvAjIYqD7cA',
-                        description: 'Nigerian news & current affairs' },
-                    { name: 'eNCA', country: 'South Africa', ytChannelId: 'UCI7Xk4gXZ7gZ0eYwT0JxDYg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCI7Xk4gXZ7gZ0eYwT0JxDYg',
-                        description: 'eNews Channel Africa' },
-                    { name: 'Newzroom Afrika', country: 'South Africa',
-                        ytChannelId: 'UC7Q7Zl3Z4pFAp8Q6gL7mNVA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC7Q7Zl3Z4pFAp8Q6gL7mNVA',
-                        description: 'South African news channel' },
-                    { name: 'NTA News', country: 'Nigeria', ytChannelId: 'UCz8QaiQInZ2R5jR3s5qZxVw',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCz8QaiQInZ2R5jR3s5qZxVw',
-                        description: 'Nigerian Television Authority' },
-                ]
-            },
-            'global': {
-                label: 'Global',
-                channels: [
-                    { name: 'Bloomberg TV', country: 'Global',
-                        ytChannelId: 'UCIALMKvObZNtJ6AmdCLP7Lg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg',
-                        description: 'Premier financial news' },
-                    { name: 'Al Jazeera English', country: 'Global', ytChannelId: 'UCNye-wNBqNL5ZzHSJj3l8Bg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCNye-wNBqNL5ZzHSJj3l8Bg',
-                        description: 'Award-winning global coverage' },
-                    { name: 'BBC News', country: 'Global', ytChannelId: 'UC16niRr50-MSBwiO3YDb3RA',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC16niRr50-MSBwiO3YDb3RA',
-                        description: 'Trusted news worldwide' },
-                    { name: 'France 24 English', country: 'Global', ytChannelId: 'UCQfwfsi5VrQ8yKZ-UWmAEFg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCQfwfsi5VrQ8yKZ-UWmAEFg',
-                        description: 'French perspective in English' },
-                    { name: 'DW News', country: 'Global', ytChannelId: 'UCknLrEdhRCp1aegoMqRaCZg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCknLrEdhRCp1aegoMqRaCZg',
-                        description: 'German international broadcasting' },
-                    { name: 'Sky News', country: 'Global', ytChannelId: 'UCiMiqaAfll3BKzP4Mf8qxIg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCiMiqaAfll3BKzP4Mf8qxIg',
-                        description: 'UK-based global news' },
-                    { name: 'WION', country: 'Global', ytChannelId: 'UC_gUM8rL-Lrg6O3adPW9K1g',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC_gUM8rL-Lrg6O3adPW9K1g',
-                        description: 'Global news from India' },
-                    { name: 'Euronews', country: 'Global', ytChannelId: 'UCW2QcKZiU8aUGg4yxCIditg',
-                        ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCW2QcKZiU8aUGg4yxCIditg',
-                        description: 'European perspective on world news' },
-                ]
-            }
-        };
-
-        let currentContinent = 'americas';
-
-        const socket = io();
-        let state = {
-            threats: [],
-            vulns: [],
-            companies: [],
-            briefings: [],
-            map_nodes: [],
-            ticker_news: [],
-            stocks: {},
-            stock_history: {},
-            forex: {},
-            incidents: 0,
-            threat_level: 'ELEVATED',
-            last_updated: null,
-            sources_count: 80,
-            articles: []
-        };
-        let currentView = 'feed';
-        let refreshCountdown = 300;
-        let stockChartInstance = null;
-        let forexSparkCharts = {};
-
-        socket.on('live_data', data => {
-            state = { ...state, ...data };
-            if (data.last_updated) {
-                document.getElementById('last-upd').textContent = new Date(data.last_updated)
-                    .toLocaleTimeString();
-                refreshCountdown = 300;
-            }
-            updateUI();
-        });
-
-        socket.on('stock_update', data => {
-            state.stocks = data.stocks;
-            updateStockTicker();
-            if (currentView === 'markets') renderMarkets();
-            if (currentView === 'forex') renderForex();
-        });
-
-        socket.on('forex_update', data => {
-            state.forex = data.forex;
-            if (currentView === 'forex') renderForex();
-        });
-
-        function updateUI() {
-            updateNewsTicker();
-            updateStockTicker();
-            updateStatsBar();
-            renderCurrentView();
-            updateSidebar();
-            updateSentiment();
-            document.getElementById('threat-level-text').textContent = state.threat_level;
-            document.getElementById('threat-level-dot').style.background =
-                state.threat_level === 'CRITICAL' ? '#EF4444' : state.threat_level === 'HIGH' ? '#F59E0B' :
-                'var(--gold)';
-        }
-
-        function updateNewsTicker() {
-            const inner = document.getElementById('ticker-inner');
-            const items = state.ticker_news || [];
-            if (!items.length) return;
-            const double = [...items, ...items];
-            inner.innerHTML = double.map(text =>
-                `<span class="tick-item"><span class="tick-cat">CYBER</span>${text}</span>`).join('');
-        }
-
-        function updateStockTicker() {
-            const inner = document.getElementById('stock-ticker-inner');
-            const symbols = Object.keys(state.stocks);
-            if (!symbols.length) return;
-            const items = symbols.map(sym => {
-                const q = state.stocks[sym];
-                if (!q || q.price == null) return '';
-                const change = q.change ? (q.change > 0 ? '+' : '') + q.change.toFixed(2) : '—';
-                const color = q.change > 0 ? 'var(--green)' : q.change < 0 ? 'var(--red)' : 'var(--text-3)';
-                return `<span class="tick-item"><span class="tick-cat">${sym}</span>${q.price.toFixed(2)} <span style="color:${color}">${change}</span></span>`;
-            }).filter(Boolean);
-            const double = [...items, ...items];
-            inner.innerHTML = double.join('');
-        }
-
-        function updateStatsBar() {
-            document.getElementById('stat-threats').textContent = state.threats.length;
-            document.getElementById('stat-incidents').textContent = state.incidents;
-            document.getElementById('stat-articles').textContent = state.articles.length;
-            document.getElementById('stat-sources').textContent = state.sources_count;
-        }
-
-        function updateSentiment() {
-            const critical = state.threats.filter(t => t.sev === 'CRITICAL').length;
-            const bearish = Math.min(1, critical * 0.12);
-            const bullish = 1 - bearish;
-            document.getElementById('sentiment-score').textContent = bullish.toFixed(2);
-            document.getElementById('sentiment-fill').style.width = (bullish * 100) + '%';
-            document.getElementById('sentiment-bull').textContent = Math.round(bullish * 100) + '%';
-            document.getElementById('sentiment-bear').textContent = Math.round(bearish * 100) + '%';
-        }
-
-        // ═══════════ VIEW RENDERING ═══════════
-        function renderCurrentView() {
-            const views = ['cards-container', 'markets-view', 'forex-view', 'vulns-view', 'companies-view', 'map-view',
-                'briefing-view', 'live-tv-view'
-            ];
-            views.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'none';
-            });
-            const cardsContainer = document.getElementById('cards-container');
-            if (cardsContainer) cardsContainer.style.display = 'none';
-            // Hide sidebar when on Live TV for full-width experience
-            const sidebar = document.getElementById('sidebar');
-            const layout = document.getElementById('layout');
-
-            switch (currentView) {
-                case 'feed':
-                    if (cardsContainer) cardsContainer.style.display = '';
-                    if (sidebar) sidebar.style.display = '';
-                    renderFeed();
-                    break;
-                case 'markets':
-                    document.getElementById('markets-view').style.display = '';
-                    if (sidebar) sidebar.style.display = '';
-                    renderMarkets();
-                    break;
-                case 'forex':
-                    document.getElementById('forex-view').style.display = '';
-                    if (sidebar) sidebar.style.display = '';
-                    renderForex();
-                    break;
-                case 'vulns':
-                    document.getElementById('vulns-view').style.display = '';
-                    if (sidebar) sidebar.style.display = '';
-                    renderVulns();
-                    break;
-                case 'companies':
-                    document.getElementById('companies-view').style.display = '';
-                    if (sidebar) sidebar.style.display = '';
-                    renderCompanies();
-                    break;
-                case 'map':
-                    document.getElementById('map-view').style.display = '';
-                    if (sidebar) sidebar.style.display = '';
-                    renderMap();
-                    break;
-                case 'briefing':
-                    document.getElementById('briefing-view').style.display = '';
-                    if (sidebar) sidebar.style.display = '';
-                    renderBriefing();
-                    break;
-                case 'live-tv':
-                    document.getElementById('live-tv-view').style.display = '';
-                    if (sidebar) sidebar.style.display = 'none';
-                    if (layout) layout.style.maxWidth = '100%';
-                    renderLiveTV();
-                    break;
-            }
-            // Restore layout max-width for non-TV views
-            if (currentView !== 'live-tv' && layout) {
-                layout.style.maxWidth = '1800px';
-            }
-        }
-
-        function renderFeed() {
-            const container = document.getElementById('cards-container');
-            container.innerHTML = (state.articles || []).map((a, i) => {
-                const typeClass = a.category === 'cybersecurity' ? 'cat-security' : (a.category ===
-                    'technology' ? 'cat-dev' : 'cat-market');
-                return `<div class="card ${i===0?'breaking':''}" onclick="window.open('${a.link}','_blank')">
-          <div class="c-top">
-            <span class="c-cat ${typeClass}">${a.type || 'NEWS'}</span>
-            <span class="c-time">${a.published ? new Date(a.published).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span>
-          </div>
-          <div class="c-title">${a.title}</div>
-          <div class="c-summary">${a.summary}</div>
-          <div class="c-foot">
-            <span class="c-source">${a.source}</span>
-            <span class="c-time">${a.region || ''}</span>
-          </div>
-        </div>`;
-            }).join('');
-        }
-
-        // ── ENHANCED MARKETS WITH TRADINGVIEW ──
-        function renderMarkets() {
-            const div = document.getElementById('markets-view');
-            let html = `
-        <div class="feed-label">TradingView · Market Overview</div>
-        <div class="tv-widget-container" id="tv-market-overview">
-          <div id="tv-market-overview-inner" style="height:450px;"></div>
-        </div>
-        <div class="feed-label">Cybersecurity & Tech Stocks (56)</div>
-        <div style="overflow-x:auto;">
-          <table id="markets-table">
-            <thead><tr><th>Symbol</th><th>Price</th><th>Change</th><th>Volume</th><th>30D Trend</th></tr></thead>
-            <tbody id="markets-tbody"></tbody>
-          </table>
-        </div>
-        <div id="stock-detail" style="display:none;">
-          <div class="feed-label" id="stock-detail-label">Advanced Chart</div>
-          <div class="tv-widget-container" id="tv-advanced-chart" style="height:500px;">
-            <div id="tv-advanced-chart-inner" style="height:500px;"></div>
-          </div>
-          <button onclick="closeStockDetail()" style="margin-top:10px; background:transparent; border:1px solid var(--gold-dim); color:var(--gold); padding:8px 18px; cursor:pointer; font-family:var(--font-mono); font-size:0.7rem; letter-spacing:2px;">Close Chart</button>
-        </div>`;
-            div.innerHTML = html;
-
-            // Render stock table
-            const tbody = document.getElementById('markets-tbody');
-            const symbols = Object.keys(state.stocks);
-            if (!symbols.length) { tbody.innerHTML =
-                '<tr><td colspan="5">Loading stock data...</td></tr>'; } else {
-                tbody.innerHTML = symbols.map(sym => {
-                    const q = state.stocks[sym];
-                    if (!q || q.price == null) return '';
-                    const change = q.change || 0;
-                    const changeClass = change >= 0 ? 'stock-up' : 'stock-down';
-                    const changeStr = (change >= 0 ? '+' : '') + change.toFixed(2);
-                    const vol = q.volume ? (q.volume / 1e6).toFixed(1) + 'M' : '—';
-                    return `<tr class="stock-row" onclick="showStockDetail('${sym}')">
-            <td><strong>${sym}</strong></td>
-            <td>${q.price.toFixed(2)}</td>
-            <td class="${changeClass}">${changeStr}</td>
-            <td>${vol}</td>
-            <td><canvas id="spark-${sym}" width="100" height="30"></canvas></td>
+  div.innerHTML = `
+    <div class="feed-label">Market Impact Matrix · Stock vs Threat Correlation</div>
+    <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--border);">
+      <table class="risk-table">
+        <thead><tr><th>Ticker</th><th>Price</th><th>Change</th><th>Risk Score</th><th>Threats</th><th>Vulns</th><th>Top Related Threat</th></tr></thead>
+        <tbody>${matrix.map(r => {
+          const riskColor = r.totalRisk > 70 ? '#EF4444' : r.totalRisk > 40 ? '#F59E0B' : 'var(--gold)';
+          return `<tr style="border-bottom:1px solid var(--border-subtle);">
+            <td style="color:var(--gold);">${r.ticker}</td>
+            <td>$${r.price.toFixed(2)}</td>
+            <td style="color:${r.change>=0?'var(--green)':'var(--red)'};">${r.change>=0?'+':''}${r.change.toFixed(2)}</td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:${r.totalRisk}%;background:${riskColor};"></div></div><span>${Math.round(r.totalRisk)}%</span></div></td>
+            <td>${r.threatCount}</td>
+            <td>${r.vulnCount}</td>
+            <td style="font-size:0.65rem;">${r.topThreat.substring(0,50)}</td>
           </tr>`;
-                }).join('');
-            }
+        }).join('')}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:20px;padding:14px 20px;background:var(--surface-raised);border:1px solid var(--border);font-family:var(--font-mono);font-size:0.7rem;color:var(--text-2);">
+      <span style="color:var(--gold);">◆ How it works:</span> Risk scores combine active cyber threats, CVEs mentioning the stock, and price drop magnitude. Higher scores indicate elevated exposure.
+    </div>`;
+}
 
-            // Sparklines
-            symbols.forEach(sym => {
-                const history = state.stock_history?.[sym] || [];
-                if (history.length < 2) return;
-                const canvas = document.getElementById(`spark-${sym}`);
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (window[`sparkChart_${sym}`]) window[`sparkChart_${sym}`].destroy();
-                window[`sparkChart_${sym}`] = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: history.map((_, i) => i + 1),
-                        datasets: [{
-                            data: history,
-                            borderColor: (state.stocks[sym]?.change || 0) >= 0 ? '#34C759' :
-                                '#EF4444',
-                            borderWidth: 1.5,
-                            pointRadius: 0,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: false,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                        scales: { x: { display: false }, y: { display: false } },
-                        animation: false
-                    }
-                });
-            });
+// ── VULNERABILITIES ──
+function renderVulns() {
+  const div = document.getElementById('vulns-view');
+  const vulns = state.vulns || [];
+  div.innerHTML = `<div class="feed-label">Vulnerability Timeline · Stock Impact</div>` +
+    (vulns.length ? vulns.map(v => {
+      const sevColor = v.sev==='CRITICAL'?'#EF4444':v.sev==='HIGH'?'#F59E0B':'var(--gold-dim)';
+      const affected = v.affected_stocks?.length ? `<span style="color:var(--red);font-size:0.65rem;">⚠ Affects: ${v.affected_stocks.join(', ')}</span>` : '';
+      return `<div class="card" style="border-left-color:${sevColor};" onclick="window.open('https://nvd.nist.gov/vuln/detail/${v.id}','_blank')">
+        <div class="c-top"><span class="c-cat cat-security">${v.id}</span><span>CVSS ${v.score}</span></div>
+        <div class="c-title">${v.product}</div>
+        <div class="c-summary">${v.desc} ${affected}</div>
+        <div class="c-foot"><span class="c-source">${v.status}</span><span style="color:${sevColor};">${v.sev}</span></div>
+      </div>`;
+    }).join('') : '<div style="padding:40px;text-align:center;color:var(--text-3);">No recent vulnerabilities</div>');
+}
 
-            // Initialize TradingView Market Overview widget
-            initTVMarketOverview();
-        }
+// ── COMPANIES ──
+function renderCompanies() {
+  const div = document.getElementById('companies-view');
+  const companies = state.companies || [];
+  div.innerHTML = `<div class="feed-label">Company Risk Profiles</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1px;background:var(--border);">` +
+    companies.map(c => `<div class="card"><div class="c-top"><span class="c-cat cat-market">${c.ticker}</span><span>${c.sector}</span></div>
+      <div class="c-title">${c.name}</div><div class="c-summary">Risk: ${c.risk}/100 | AI Readiness: ${c.ai}/100</div>
+      <div class="c-foot"><span class="c-source">${c.status}</span></div></div>`).join('') + '</div>';
+}
 
-        function initTVMarketOverview() {
-            const container = document.getElementById('tv-market-overview-inner');
-            if (!container || window._tvMarketOverviewInit) return;
-            window._tvMarketOverviewInit = true;
-            // Clear and create TradingView widget
-            container.innerHTML = '';
-            const script = document.createElement('script');
-            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
-            script.async = true;
-            script.innerHTML = JSON.stringify({
-                "colorTheme": "dark",
-                "dateRange": "12M",
-                "showChart": true,
-                "locale": "en",
-                "width": "100%",
-                "height": "100%",
-                "largeChartUrl": "",
-                "isTransparent": true,
-                "showSymbolLogo": true,
-                "showFloatingTooltip": true,
-                "tabs": [{
-                    "title": "Indices",
-                    "symbols": [
-                        { "s": "FOREXCOM:SPXUSD", "d": "S&P 500" },
-                        { "s": "NASDAQ:NDX", "d": "Nasdaq 100" },
-                        { "s": "FOREXCOM:DJI", "d": "Dow 30" },
-                        { "s": "FOREXCOM:UKXGBP", "d": "FTSE 100" },
-                        { "s": "FOREXCOM:DAXEUR", "d": "DAX" },
-                        { "s": "FOREXCOM:NKYJPY", "d": "Nikkei 225" }
-                    ]
-                }, {
-                    "title": "Tech",
-                    "symbols": [
-                        { "s": "NASDAQ:AAPL", "d": "Apple" },
-                        { "s": "NASDAQ:MSFT", "d": "Microsoft" },
-                        { "s": "NASDAQ:NVDA", "d": "NVIDIA" },
-                        { "s": "NASDAQ:GOOGL", "d": "Alphabet" },
-                        { "s": "NASDAQ:META", "d": "Meta" },
-                        { "s": "NASDAQ:AMZN", "d": "Amazon" }
-                    ]
-                }, {
-                    "title": "Cyber",
-                    "symbols": [
-                        { "s": "NASDAQ:CRWD", "d": "CrowdStrike" },
-                        { "s": "NASDAQ:PANW", "d": "Palo Alto" },
-                        { "s": "NASDAQ:ZS", "d": "Zscaler" },
-                        { "s": "NASDAQ:FTNT", "d": "Fortinet" },
-                        { "s": "NASDAQ:OKTA", "d": "Okta" },
-                        { "s": "NYSE:NET", "d": "Cloudflare" }
-                    ]
-                }]
-            });
-            container.appendChild(script);
-        }
+// ── BRIEFING ──
+function renderBriefing() {
+  const div = document.getElementById('briefing-view');
+  const brief = state.briefings?.[0];
+  div.innerHTML = `<div class="feed-label">AI Executive Briefing</div>
+    ${brief ? `<div class="card" style="padding:28px;"><div class="c-top"><span class="c-cat cat-ai">AI ANALYSIS</span></div>
+      <div class="c-title" style="font-size:1.5rem;">${brief.title}</div>
+      <div class="c-summary" style="-webkit-line-clamp:unset;">${brief.content}</div></div>` : '<div style="padding:40px;color:var(--text-3);">No briefing available</div>'}`;
+}
 
-        function showStockDetail(sym) {
-            document.getElementById('stock-detail').style.display = 'block';
-            document.getElementById('stock-detail-label').textContent = `Advanced Chart · ${sym}`;
-            // Scroll to the chart
-            document.getElementById('stock-detail').scrollIntoView({ behavior: 'smooth' });
+// ── LIVE TV ──
+const LIVE_TV_CHANNELS = {
+  americas: { label:'Americas', channels:[
+    {name:'Bloomberg Television',country:'USA',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg',desc:'Global business news 24/7'},
+    {name:'CNBC Television',country:'USA',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCrp_UIK1lssBZq0w6x0GQRA',desc:'Financial market coverage'},
+    {name:'Fox News',country:'USA',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCXIJgqnII2ZOINSWNOGFThA',desc:'Breaking news & analysis'},
+    {name:'ABC News Live',country:'USA',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q',desc:'24/7 streaming news'},
+    {name:'CBS News 24/7',country:'USA',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC8p1vwPD8hEiReN5Yz1P3JA',desc:'Continuous coverage'},
+    {name:'NBC News',country:'USA',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCeY0G5L6Ux3e2qH5cMp6hPA',desc:'Breaking news & top stories'},
+    {name:'Yahoo Finance',country:'USA',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCEAZeUIeJs0IjQiqTCVSIAA',desc:'Live market coverage'},
+  ]},
+  europe: { label:'Europe', channels:[
+    {name:'BBC News',country:'UK',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC16niRr50-MSBwiO3YDb3RA',desc:'British public broadcasting'},
+    {name:'Sky News',country:'UK',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCiMiqaAfll3BKzP4Mf8qxIg',desc:'UK & world news'},
+    {name:'DW News',country:'Germany',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCknLrEdhRCp1aegoMqRaCZg',desc:'Deutsche Welle'},
+    {name:'France 24 English',country:'France',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCQfwfsi5VrQ8yKZ-UWmAEFg',desc:'French news in English'},
+    {name:'Euronews',country:'EU',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCW2QcKZiU8aUGg4yxCIditg',desc:'Pan-European coverage'},
+    {name:'Channel 4 News',country:'UK',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCmJ6eP-NSdUQp_mz1HkHn7w',desc:'British journalism'},
+    {name:'GB News',country:'UK',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC0XQJtEXLhXzsJXeL7s8cNQ',desc:'British news & opinion'},
+  ]},
+  asia: { label:'Asia-Pacific', channels:[
+    {name:'WION',country:'India',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC_gUM8rL-Lrg6O3adPW9K1g',desc:'Global perspective'},
+    {name:'CNA',country:'Singapore',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC83jt4dlz1Gq58xy0U9xU0A',desc:'Channel News Asia'},
+    {name:'NHK World Japan',country:'Japan',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCSPEjw8F2nQDtmUKPFNF7_A',desc:'Japanese broadcaster'},
+    {name:'ABC News Australia',country:'Australia',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCVgO39Bk5sMo66-6o6Spn6Q',desc:'Australian Broadcasting'},
+    {name:'Arirang News',country:'South Korea',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC8N0DhVEf2I4eyxVp4WEgBA',desc:'Korea global news'},
+    {name:'Firstpost',country:'India',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCz8QaiQInZ2R5jR3s5qZxVw',desc:'Indian news & analysis'},
+    {name:'ANI News',country:'India',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCtFQDgA_eeVq3KInqMYIq0Q',desc:'Asian News International'},
+  ]},
+  middleeast: { label:'Middle East', channels:[
+    {name:'Al Jazeera English',country:'Qatar',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCNye-wNBqNL5ZzHSJj3l8Bg',desc:'Award-winning news'},
+    {name:'TRT World',country:'Turkey',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC7fWeaHhqgM4Ry-RMpM2YYw',desc:'Turkish broadcaster'},
+    {name:'i24 News English',country:'Israel',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCB2Jj2_RwMpEa6B0lSXzNQA',desc:'Israeli news channel'},
+    {name:'Al Arabiya English',country:'UAE',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCqo1gI0Ml5Hq4k6j_Ik1KjA',desc:'Pan-Arab news'},
+    {name:'Middle East Eye',country:'MENA',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCR0fLk8jzJG9EXq6iYJRN7g',desc:'Independent coverage'},
+    {name:'ILTV Israel News',country:'Israel',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCzC6K9e3o3kETlDgX4sxGBQ',desc:'Israel updates'},
+    {name:'Press TV',country:'Iran',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCf1vekol2H9XE4QfuXsW_EA',desc:'Iranian news network'},
+  ]},
+  africa: { label:'Africa', channels:[
+    {name:'SABC News',country:'South Africa',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC8yH4JmI6jE0hUg8JhK0J6g',desc:'South African broadcaster'},
+    {name:'Channels Television',country:'Nigeria',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC3gNQxYi6eQH8JPxX9j5M6A',desc:'Nigeria leading news'},
+    {name:'Arise News',country:'Nigeria',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC8wvYvRQJhE_KjTgPKhZGsw',desc:'Pan-African network'},
+    {name:'TV360 Nigeria',country:'Nigeria',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCf3hDxTHRQLgNvAjIYqD7cA',desc:'Nigerian current affairs'},
+    {name:'eNCA',country:'South Africa',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCI7Xk4gXZ7gZ0eYwT0JxDYg',desc:'eNews Channel Africa'},
+    {name:'Newzroom Afrika',country:'South Africa',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC7Q7Zl3Z4pFAp8Q6gL7mNVA',desc:'South African news'},
+    {name:'NTA News',country:'Nigeria',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCz8QaiQInZ2R5jR3s5qZxVw',desc:'Nigerian Television Authority'},
+  ]},
+  global: { label:'Global', channels:[
+    {name:'Bloomberg TV',country:'Global',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg',desc:'Premier financial news'},
+    {name:'Al Jazeera English',country:'Global',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCNye-wNBqNL5ZzHSJj3l8Bg',desc:'Award-winning global coverage'},
+    {name:'BBC News',country:'Global',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC16niRr50-MSBwiO3YDb3RA',desc:'Trusted worldwide'},
+    {name:'France 24 English',country:'Global',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCQfwfsi5VrQ8yKZ-UWmAEFg',desc:'French perspective'},
+    {name:'DW News',country:'Global',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCknLrEdhRCp1aegoMqRaCZg',desc:'German international'},
+    {name:'Sky News',country:'Global',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCiMiqaAfll3BKzP4Mf8qxIg',desc:'UK-based global'},
+    {name:'WION',country:'Global',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UC_gUM8rL-Lrg6O3adPW9K1g',desc:'News from India'},
+    {name:'Euronews',country:'Global',ytLiveUrl:'https://www.youtube.com/embed/live_stream?channel=UCW2QcKZiU8aUGg4yxCIditg',desc:'European world news'},
+  ]}
+};
 
-            // Initialize TradingView Advanced Chart
-            const container = document.getElementById('tv-advanced-chart-inner');
-            container.innerHTML = '';
-            const script = document.createElement('script');
-            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-            script.async = true;
-            script.innerHTML = JSON.stringify({
-                "autosize": true,
-                "symbol": `NASDAQ:${sym}`,
-                "interval": "D",
-                "timezone": "Etc/UTC",
-                "theme": "dark",
-                "style": "1",
-                "locale": "en",
-                "allow_symbol_change": true,
-                "calendar": false,
-                "support_host": "https://www.tradingview.com",
-                "backgroundColor": "rgba(12,12,12,1)",
-                "gridColor": "rgba(30,30,30,1)",
-                "hide_top_toolbar": false,
-                "hide_legend": false,
-                "save_image": false,
-                "studies": ["MASimple@tv-basicstudies", "RSI@tv-basicstudies",
-                "MACD@tv-basicstudies"],
-                "show_popup_button": true,
-                "popup_width": "1000",
-                "popup_height": "650"
-            });
-            container.appendChild(script);
+function renderLiveTV() {
+  const div = document.getElementById('live-tv-view');
+  const continent = LIVE_TV_CHANNELS[currentContinent] || LIVE_TV_CHANNELS['americas'];
+  let html = `<div class="tv-hero"><div class="tv-hero-title">📡 LIVE TV · ${continent.label}</div><span style="color:var(--red);font-family:var(--font-mono);">● LIVE</span></div>`;
+  html += `<div class="tv-continent-tabs">`;
+  Object.keys(LIVE_TV_CHANNELS).forEach(k => {
+    html += `<button class="ctab${k===currentContinent?' on':''}" data-c="${k}">${LIVE_TV_CHANNELS[k].label} (${LIVE_TV_CHANNELS[k].channels.length})</button>`;
+  });
+  html += `</div><div class="tv-grid">`;
+  continent.channels.forEach(ch => {
+    html += `<div class="tv-channel-card">
+      <div class="tv-channel-header"><span class="tv-channel-name"><span class="tv-live-dot"></span>${ch.name}</span><span style="color:var(--text-3);font-size:0.65rem;">${ch.country}</span></div>
+      <div class="tv-iframe-wrapper"><iframe src="${ch.ytLiveUrl}" allowfullscreen loading="lazy"></iframe></div>
+      <div style="padding:8px 16px;font-size:0.65rem;color:var(--text-3);">${ch.desc}</div>
+    </div>`;
+  });
+  html += '</div>';
+  div.innerHTML = html;
+  document.querySelectorAll('.ctab').forEach(b => b.addEventListener('click', function(){
+    currentContinent = this.dataset.c; renderLiveTV();
+  }));
+}
 
-            // Also draw a quick Chart.js chart as backup
-            const history = state.stock_history?.[sym] || [];
-            if (history.length > 0) {
-                const canvasId = 'stock-chart-canvas';
-                // Check if canvas exists, if not create it
-                let canvas = document.getElementById(canvasId);
-                if (!canvas) {
-                    canvas = document.createElement('canvas');
-                    canvas.id = canvasId;
-                    canvas.style.maxHeight = '300px';
-                    canvas.style.width = '100%';
-                    canvas.style.marginTop = '16px';
-                    container.parentElement.appendChild(canvas);
-                }
-                if (stockChartInstance) stockChartInstance.destroy();
-                stockChartInstance = new Chart(canvas.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: history.map((_, i) => `Day ${i+1}`),
-                        datasets: [{
-                            label: sym + ' (30-Day)',
-                            data: history,
-                            borderColor: '#D4AF37',
-                            backgroundColor: 'rgba(212,175,55,0.08)',
-                            fill: true,
-                            tension: 0.3,
-                            pointRadius: 0,
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: { legend: { labels: { color: '#9A9490' } } },
-                        scales: {
-                            x: { ticks: { color: '#545050' }, grid: { color: '#1e1e1e' } },
-                            y: { ticks: { color: '#545050' }, grid: { color: '#1e1e1e' },
-                                beginAtZero: false }
-                        }
-                    }
-                });
-            }
-        }
+// ═══════════ TAB CLICKS ═══════════
+document.querySelectorAll('#tabs .tab').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('#tabs .tab').forEach(b => b.classList.remove('on'));
+    this.classList.add('on');
+    currentView = this.dataset.view;
+    renderCurrentView();
+  });
+});
 
-        function closeStockDetail() {
-            document.getElementById('stock-detail').style.display = 'none';
-            if (stockChartInstance) stockChartInstance.destroy();
-            const container = document.getElementById('tv-advanced-chart-inner');
-            if (container) container.innerHTML = '';
-        }
-
-        // ── FOREX VIEW ──
-        function renderForex() {
-            const div = document.getElementById('forex-view');
-            const forex = state.forex || {};
-            const pairs = Object.keys(forex);
-            let html = `
-        <div class="feed-label">Forex · Live Rates</div>
-        <div class="forex-grid" id="forex-grid">`;
-
-            if (pairs.length === 0) {
-                html += '<div class="card" style="grid-column:1/-1;text-align:center;padding:40px;">Loading forex data...</div>';
-            } else {
-                pairs.forEach(pair => {
-                    const data = forex[pair];
-                    const price = data?.price ? data.price.toFixed(5) : '—';
-                    const displayPair = pair.replace('=X', '');
-                    html += `
-            <div class="forex-card" onclick="showForexChart('${pair}')">
-              <div class="forex-pair">${displayPair}</div>
-              <div class="forex-price">${price}</div>
-              <div class="forex-change" style="color:var(--text-3);">LIVE</div>
-              <div class="forex-spark"><canvas id="forex-spark-${pair.replace(/[^a-zA-Z0-9]/g,'_')}" width="160" height="36"></canvas></div>
-            </div>`;
-                });
-            }
-            html += '</div>';
-
-            // TradingView Forex Heat Map
-            html += `
-        <div class="feed-label">TradingView · Forex Heat Map</div>
-        <div class="tv-widget-container" id="tv-forex-heatmap" style="height:500px;">
-          <div id="tv-forex-heatmap-inner" style="height:500px;"></div>
-        </div>`;
-
-            // Economic Calendar
-            html += `
-        <div class="feed-label">Economic Calendar</div>
-        <div class="tv-widget-container" id="tv-economic-calendar" style="height:600px;">
-          <div id="tv-economic-calendar-inner" style="height:600px;"></div>
-        </div>`;
-
-            div.innerHTML = html;
-
-            // Initialize sparklines for forex
-            pairs.forEach(pair => {
-                const safeId = pair.replace(/[^a-zA-Z0-9]/g, '_');
-                const canvas = document.getElementById(`forex-spark-${safeId}`);
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                const price = forex[pair]?.price || 1;
-                const sparkData = [];
-                for (let i = 0; i < 30; i++) {
-                    sparkData.push(price + (Math.random() - 0.5) * price * 0.002);
-                }
-                if (forexSparkCharts[safeId]) forexSparkCharts[safeId].destroy();
-                forexSparkCharts[safeId] = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: sparkData.map((_, i) => i),
-                        datasets: [{ data: sparkData, borderColor: '#D4AF37', borderWidth: 1,
-                            pointRadius: 0, tension: 0.4 }]
-                    },
-                    options: {
-                        responsive: false,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                        scales: { x: { display: false }, y: { display: false } },
-                        animation: false
-                    }
-                });
-            });
-
-            // Initialize TradingView Forex Heat Map
-            initTVForexHeatmap();
-            // Initialize TradingView Economic Calendar
-            initTVEconomicCalendar();
-        }
-
-        function initTVForexHeatmap() {
-            const container = document.getElementById('tv-forex-heatmap-inner');
-            if (!container || window._tvForexHeatInit) return;
-            window._tvForexHeatInit = true;
-            container.innerHTML = '';
-            const script = document.createElement('script');
-            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js';
-            script.async = true;
-            script.innerHTML = JSON.stringify({
-                "colorTheme": "dark",
-                "dateRange": "12M",
-                "locale": "en",
-                "width": "100%",
-                "height": "100%",
-                "isTransparent": true,
-                "currencies": ["EUR", "USD", "JPY", "GBP", "CHF", "AUD", "CAD", "NZD", "CNY"]
-            });
-            container.appendChild(script);
-        }
-
-        function initTVEconomicCalendar() {
-            const container = document.getElementById('tv-economic-calendar-inner');
-            if (!container || window._tvEconCalInit) return;
-            window._tvEconCalInit = true;
-            container.innerHTML = '';
-            const script = document.createElement('script');
-            script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
-            script.async = true;
-            script.innerHTML = JSON.stringify({
-                "colorTheme": "dark",
-                "isTransparent": true,
-                "width": "100%",
-                "height": "100%",
-                "locale": "en",
-                "importanceFilter": "-1,0,1",
-                "countryFilter": "US,EU,GB,JP,CN,AU,CA,CH"
-            });
-            container.appendChild(script);
-        }
-
-        function showForexChart(pair) {
-            // Open TradingView chart for the forex pair
-            const symbol = pair.replace('=X', '').replace('USD', 'USD').replace('JPY', 'JPY');
-            const tvSymbol = `FX:${pair.replace('=X','')}`;
-            window.open(`https://www.tradingview.com/chart/?symbol=${tvSymbol}`, '_blank');
-        }
-
-        // ── VULNERABILITIES ──
-        function renderVulns() {
-            const div = document.getElementById('vulns-view');
-            const vulns = state.vulns || [];
-            div.innerHTML = `<div class="feed-label">Vulnerability Timeline</div>` +
-                (vulns.length ? vulns.map(v => `
-          <div class="card" style="border-left-color:${v.sev==='CRITICAL'?'#EF4444':v.sev==='HIGH'?'#F59E0B':'var(--gold-dim)'}">
-            <div class="c-top"><span class="c-cat cat-security">${v.id}</span><span class="c-time">${v.age}</span></div>
-            <div class="c-title">${v.product} – ${v.vendor}</div>
-            <div class="c-summary">CVSS ${v.score} – ${v.desc}</div>
-            <div class="c-foot"><span class="c-source">${v.status}</span></div>
-          </div>`).join('') :
-                    '<div class="no-articles" style="padding:40px;text-align:center;color:var(--text-3);">No recent vulnerabilities found</div>'
-                    );
-        }
-
-        // ── COMPANIES ──
-        function renderCompanies() {
-            const div = document.getElementById('companies-view');
-            const companies = state.companies || [];
-            div.innerHTML =
-                `<div class="feed-label">Company Risk Profiles (${companies.length})</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1px;background:var(--border);">` +
-                companies.map(c => {
-                    const rc = c.risk > 70 ? '#EF4444' : c.risk > 40 ? '#F59E0B' : 'var(--gold)';
-                    return `<div class="card"><div class="c-top"><span class="c-cat cat-market">${c.ticker}</span><span>${c.sector}</span></div>
-            <div class="c-title">${c.name}</div>
-            <div class="c-summary">Risk: ${c.risk}/100 | AI: ${c.ai}/100 | Incidents: ${c.incidents}</div>
-            <div class="c-foot"><span class="c-source">${c.status}</span></div>
-          </div>`;
-                }).join('') + '</div>';
-        }
-
-        // ── MAP ──
-        function renderMap() {
-            const container = document.getElementById('map-svg-container');
-            container.innerHTML = '';
-            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            svg.setAttribute("viewBox", "0 0 1000 500");
-            svg.style.width = "100%";
-            svg.style.height = "auto";
-            svg.innerHTML = WORLD_MAP_SVG;
-            container.appendChild(svg);
-
-            (state.map_nodes || []).forEach((n) => {
-                const [x, y] = geoToPixel(n.lat, n.lng, 1000, 500);
-                const color = { ransomware: '#EF4444', apt: '#EF4444', ddos: '#F59E0B',
-                    phishing: '#F5C400', infra: '#EF4444' } [n.t] || '#D4AF37';
-                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-                g.innerHTML = `
-          <circle cx="${x}" cy="${y}" r="${n.r}" fill="${color}" opacity="0.9"/>
-          <circle cx="${x}" cy="${y}" r="${n.r*2}" fill="none" stroke="${color}" stroke-width="0.8" opacity="0.4"/>
-          <text x="${x}" y="${y-n.r-5}" text-anchor="middle" fill="${color}" font-size="9" font-family="Space Mono">${n.lbl}</text>
-        `;
-                svg.appendChild(g);
-            });
-        }
-
-        function geoToPixel(lat, lng, w, h) {
-            const x = (lng + 180) * (w / 360);
-            const y = (90 - lat) * (h / 180);
-            return [x, y];
-        }
-
-        // ── BRIEFING ──
-        function renderBriefing() {
-            const div = document.getElementById('briefing-view');
-            const brief = state.briefings?.[0];
-            div.innerHTML = `<div class="feed-label">AI Executive Briefing</div>
-        ${brief ? `<div class="card" style="padding:28px;">
-          <div class="c-top"><span class="c-cat cat-ai">AI ANALYSIS</span><span class="c-time">${new Date(brief.timestamp).toLocaleString()}</span></div>
-          <div class="c-title" style="font-size:1.8rem; margin-bottom:18px;">${brief.title}</div>
-          <div class="c-summary" style="font-size:1.1rem; line-height:1.8; -webkit-line-clamp: unset;">${brief.content}</div>
-          <div class="c-foot"><span class="c-source">Generated by NEXUS AI</span></div>
-        </div>` : '<div class="no-articles" style="padding:40px;text-align:center;color:var(--text-3);">No briefing available</div>'}`;
-        }
-
-        // ── LIVE TV VIEW ──
-        function renderLiveTV() {
-            const div = document.getElementById('live-tv-view');
-            const continentData = LIVE_TV_CHANNELS[currentContinent] || LIVE_TV_CHANNELS['americas'];
-
-            let html = `
-        <div class="tv-hero">
-          <div class="tv-hero-title">📡 LIVE TV</div>
-          <div class="tv-hero-sub">Real-time news streams from ${continentData.label}</div>
-          <div class="tv-hero-live"><span>●</span> LIVE</div>
-        </div>
-        <div class="tv-continent-tabs" id="tv-continent-tabs">`;
-
-            // Continent tabs
-            Object.keys(LIVE_TV_CHANNELS).forEach(key => {
-                const cData = LIVE_TV_CHANNELS[key];
-                html +=
-                    `<button class="ctab${key === currentContinent ? ' on' : ''}" data-continent="${key}">${cData.label} (${cData.channels.length})</button>`;
-            });
-
-            html += `</div>
-        <div class="tv-info-banner">
-          <span>ℹ</span> All streams are live 24/7 YouTube broadcasts. If a channel appears blank, it may be between broadcasts or geo-restricted. Click "Watch on YT" to open directly.
-        </div>
-        <div class="tv-grid" id="tv-grid">`;
-
-            continentData.channels.forEach(ch => {
-                html += `
-          <div class="tv-channel-card">
-            <div class="tv-channel-header">
-              <span class="tv-channel-name"><span class="tv-live-dot"></span>${ch.name}</span>
-              <span class="tv-channel-country">${ch.country}</span>
-            </div>
-            <div class="tv-iframe-wrapper">
-              <iframe src="${ch.ytLiveUrl}"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-                loading="lazy"
-                title="${ch.name} Live Stream">
-              </iframe>
-            </div>
-            <div class="tv-channel-footer">
-              <span>${ch.description}</span>
-              <button class="tv-watch-btn" onclick="window.open('https://www.youtube.com/channel/${ch.ytChannelId}/live','_blank')">Watch on YT ↗</button>
-            </div>
-          </div>`;
-            });
-
-            html += '</div>';
-            div.innerHTML = html;
-
-            // Add event listeners to continent tabs
-            document.querySelectorAll('#tv-continent-tabs .ctab').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    currentContinent = this.dataset.continent;
-                    renderLiveTV();
-                });
-            });
-        }
-
-        // ═══════════ SIDEBAR ═══════════
-        function updateSidebar() {
-            const trends = (state.threats || []).slice(0, 5).map((t, i) => ({
-                kw: t.name?.substring(0, 25) || '—',
-                cnt: 100 - i * 10
-            }));
-            document.getElementById('trending-list').innerHTML = trends.map((tr, i) => `
-        <div class="tr-item"><span class="tr-rank">0${i+1}</span><div class="tr-body"><div class="tr-kw">${tr.kw}</div><div class="tr-bar" style="width:${tr.cnt}%"></div></div><span class="tr-cnt">${tr.cnt}</span></div>
-      `).join('');
-
-            document.getElementById('pulse-list').innerHTML = (state.companies || []).slice(0, 6).map(c => `
-        <div class="pulse-item"><span class="pulse-lbl">${c.ticker}</span><div class="pulse-bg"><div class="pulse-fill" style="width:${c.risk}%"></div></div><span class="pulse-n">${c.risk}</span></div>
-      `).join('');
-
-            const sources = ['Reuters', 'The Hacker News', 'BleepingComputer', 'Wired', 'CNBC', 'BBC', 'CISA', 'NSA',
-                'NVD', 'TechCrunch'
-            ];
-            document.getElementById('sources-list').innerHTML = sources.map(s => `
-        <div class="src-item"><span class="src-name">${s}</span><span class="src-badge">LIVE</span></div>
-      `).join('');
-
-            // Bloomberg sidebar panel
-            const bloombergPanel = document.getElementById('bloomberg-panel-sidebar');
-            if (bloombergPanel) {
-                bloombergPanel.innerHTML = `
-          <div class="bloomberg-panel">
-            <div class="bp-header">◆ Bloomberg</div>
-            <ul class="bp-headlines" id="bp-headlines">
-              <li>Loading Bloomberg headlines...</li>
-            </ul>
-          </div>`;
-                // Fetch Bloomberg RSS headlines
-                fetchBloombergHeadlines();
-            }
-        }
-
-        async function fetchBloombergHeadlines() {
-            try {
-                // Use a CORS proxy or direct RSS feed
-                const response = await fetch(
-                    'https://feeds.bloomberg.com/markets/news.rss?cache=' + Date.now());
-                if (!response.ok) throw new Error('Failed to fetch');
-                const text = await response.text();
-                const parser = new DOMParser();
-                const xml = parser.parseFromString(text, 'text/xml');
-                const items = xml.querySelectorAll('item');
-                const headlinesList = document.getElementById('bp-headlines');
-                if (headlinesList && items.length > 0) {
-                    headlinesList.innerHTML = Array.from(items).slice(0, 8).map(item => {
-                        const title = item.querySelector('title')?.textContent || 'Headline';
-                        const link = item.querySelector('link')?.textContent || '#';
-                        return `<li onclick="window.open('${link}','_blank')" title="${title}">${title.substring(0, 80)}${title.length>80?'...':''}</li>`;
-                    }).join('');
-                } else if (headlinesList) {
-                    headlinesList.innerHTML =
-                        '<li>Bloomberg markets data via RSS</li><li>Live financial news</li><li>Global market coverage</li>';
-                }
-            } catch (e) {
-                const headlinesList = document.getElementById('bp-headlines');
-                if (headlinesList) {
-                    headlinesList.innerHTML =
-                        '<li>◆ Markets: S&P 500 ▲</li><li>◆ Tech: NVDA leads AI rally</li><li>◆ Bonds: Yield curve watch</li><li>◆ FX: Dollar index update</li><li>◆ Commodities: Gold steady</li>';
-                }
-            }
-        }
-
-        // ═══════════ TABS & COUNTDOWN ═══════════
-        document.querySelectorAll('#tabs .tab').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('#tabs .tab').forEach(b => b.classList.remove('on'));
-                this.classList.add('on');
-                currentView = this.dataset.view;
-                // Reset TradingView init flags when switching views to allow re-init
-                if (currentView === 'markets') {
-                    window._tvMarketOverviewInit = false;
-                }
-                if (currentView === 'forex') {
-                    window._tvForexHeatInit = false;
-                    window._tvEconCalInit = false;
-                }
-                renderCurrentView();
-            });
-        });
-
-        setInterval(() => {
-            if (refreshCountdown > 0) refreshCountdown--;
-            document.getElementById('countdown').textContent =
-                `${Math.floor(refreshCountdown/60)}:${(refreshCountdown%60).toString().padStart(2,'0')}`;
-        }, 1000);
-
-        socket.on('connect', () => {
-            document.getElementById('ld-status').textContent = 'Connected';
-            setTimeout(() => document.getElementById('loading').classList.add('out'), 600);
-        });
-
-        // Initial Bloomberg fetch
-        setTimeout(fetchBloombergHeadlines, 2000);
-        // Refresh Bloomberg every 5 minutes
-        setInterval(fetchBloombergHeadlines, 300000);
-    </script>
+// ═══════════ COUNTDOWN ═══════════
+setInterval(() => {
+  if (refreshCountdown > 0) refreshCountdown--;
+  document.getElementById('countdown').textContent = `${Math.floor(refreshCountdown/60)}:${(refreshCountdown%60).toString().padStart(2,'0')}`;
+}, 1000);
+</script>
 </body>
 </html>
