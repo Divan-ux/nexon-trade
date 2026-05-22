@@ -33,7 +33,7 @@ app.config['SECRET_KEY'] = SECRET_KEY
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-# ----- Feeds & tickers (unchanged) ----------------------------
+# ----- Feeds & tickers ---------------------------------------
 RSS_FEEDS = {
     "cybersecurity": [
         "https://feeds.feedburner.com/TheHackersNews",
@@ -130,7 +130,7 @@ live_state = {
     "drop_analysis": {}
 }
 
-# ----- Helper functions (unchanged) ---------------------------
+# ----- Helper functions -------------------------------------
 def make_json_safe(obj):
     if isinstance(obj, datetime): return obj.isoformat()
     elif isinstance(obj, dict): return {k: make_json_safe(v) for k, v in obj.items()}
@@ -176,7 +176,21 @@ def categorize_article(entry, feed_category):
     if feed_category == "government": return "Government"
     return "Other"
 
-# ----- Data fetching (with timeouts) --------------------------
+# ----- Data fetching (with timeouts) -------------------------
+def run_with_timeout(func, timeout=20, default=None, *args, **kwargs):
+    result = [default]
+    def wrapper():
+        try:
+            result[0] = func(*args, **kwargs)
+        except Exception as e:
+            print(f"[TIMEOUT] {func.__name__} error: {e}")
+    t = threading.Thread(target=wrapper, daemon=True)
+    t.start()
+    t.join(timeout)
+    if t.is_alive():
+        print(f"[TIMEOUT] {func.__name__} timed out after {timeout}s")
+    return result[0]
+
 def fetch_all_rss():
     articles = []
     for category, urls in RSS_FEEDS.items():
@@ -342,9 +356,7 @@ def build_stock_drop_analysis(stocks, articles):
             }
     return analysis
 
-# ----- Dummy data for immediate display ----------------------
 def generate_dummy_data():
-    """Populate the state with placeholder data so the UI is never empty."""
     now = datetime.now(timezone.utc)
     dummy_articles = [
         {"id":f"dummy{i}", "title":f"Sample Cyber Threat {i}", "link":"#",
@@ -352,12 +364,9 @@ def generate_dummy_data():
          "published":now.isoformat(), "source":"Nexon Pulse", "category":"cybersecurity", "type":"Cyber"}
         for i in range(3)
     ]
-    dummy_threats = [
-        {"id":"t1","name":"Placeholder Threat","sev":"HIGH","region":"Global","type":"Cyber","ts":now.strftime("%Y-%m-%d %H:%M")}
-    ]
     return {
         "articles": dummy_articles,
-        "threats": dummy_threats,
+        "threats": [{"id":"t1","name":"Placeholder Threat","sev":"HIGH","region":"Global","type":"Cyber","ts":now.strftime("%Y-%m-%d %H:%M")}],
         "vulns": [],
         "companies": generate_company_list(),
         "briefings": [{"title":"Initializing...","content":"The dashboard is starting up. Real data will appear shortly.","timestamp":now.isoformat()}],
@@ -371,32 +380,15 @@ def generate_dummy_data():
         "drop_analysis": {}
     }
 
-def run_with_timeout(func, timeout=20, default=None, *args, **kwargs):
-    result = [default]
-    def wrapper():
-        try:
-            result[0] = func(*args, **kwargs)
-        except Exception as e:
-            print(f"[TIMEOUT] {func.__name__} error: {e}")
-    t = threading.Thread(target=wrapper, daemon=True)
-    t.start()
-    t.join(timeout)
-    if t.is_alive():
-        print(f"[TIMEOUT] {func.__name__} timed out after {timeout}s")
-    return result[0]
-
 # ----- Core refresh ------------------------------------------
 def refresh_all():
     global live_state
     print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] Starting refresh...")
-
-    # First, set dummy data so the dashboard shows something immediately
     dummy = generate_dummy_data()
     with state_lock:
         live_state.update(dummy)
     socketio.emit("live_data", make_json_safe(live_state))
 
-    # Then fetch real data in a background thread
     def fetch_real():
         articles = run_with_timeout(fetch_all_rss, timeout=20, default=[])
         threats = transform_to_threats(articles) if articles else dummy["threats"]
@@ -405,7 +397,6 @@ def refresh_all():
         vulns = run_with_timeout(fetch_nvd_vulns, timeout=15, default=[])
         companies = generate_company_list()
         incidents = len(threats)
-
         with state_lock:
             live_state.update({
                 "articles": articles if articles else dummy["articles"],
@@ -420,7 +411,6 @@ def refresh_all():
             })
         socketio.emit("live_data", make_json_safe(live_state))
 
-        # Slow data
         stocks = run_with_timeout(fetch_stock_quotes, timeout=30, default={})
         stock_history = run_with_timeout(generate_stock_history, timeout=20, default={})
         forex = run_with_timeout(fetch_forex_rates, timeout=20, default={})
@@ -439,7 +429,6 @@ def refresh_all():
 
     threading.Thread(target=fetch_real, daemon=True).start()
 
-# ----- Periodic updaters ------------------------------------
 def stock_updater():
     while True:
         time.sleep(60)
@@ -461,7 +450,7 @@ def scheduled_full_refresh():
         time.sleep(300)
         refresh_all()
 
-# ===== Routes ================================================
+# ----- Routes -----------------------------------------------
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -478,37 +467,18 @@ def on_connect():
 def on_refresh():
     refresh_all()
 
-# ===== Gunicorn Post-Worker Hook (FIRES RELIABLY IN PRODUCTION) =====
-# This function is called by Gunicorn AFTER each worker process starts.
-# We only start threads once (using a file lock to prevent duplicates).
-_worker_initialized = False
-_worker_init_lock = threading.Lock()
+# ═══════════════════════════════════════════════════════════════
+# START BACKGROUND THREADS AT MODULE LEVEL (NO IF BLOCKS)
+# This guarantees execution when Gunicorn imports the module.
+# ═══════════════════════════════════════════════════════════════
+print("🚀 server.py loaded — starting background threads...")
+threading.Thread(target=stock_updater, daemon=True).start()
+threading.Thread(target=forex_updater, daemon=True).start()
+threading.Thread(target=scheduled_full_refresh, daemon=True).start()
+threading.Thread(target=refresh_all, daemon=True).start()
+print("🚀 Background threads started.")
 
-def post_worker_init(worker):
-    """Gunicorn hook: called after a worker process is fully initialized."""
-    global _worker_initialized
-    with _worker_init_lock:
-        if not _worker_initialized:
-            _worker_initialized = True
-            print("🚀 Gunicorn worker initialized — starting background data fetchers...")
-            # Start periodic updaters
-            threading.Thread(target=stock_updater, daemon=True).start()
-            threading.Thread(target=forex_updater, daemon=True).start()
-            threading.Thread(target=scheduled_full_refresh, daemon=True).start()
-            # Immediate first refresh
-            threading.Thread(target=refresh_all, daemon=True).start()
-
-# Attach the hook to the Flask app so Gunicorn can find it
-app.post_worker_init = post_worker_init
-
-# ----- Dev server (only used locally) -------------------------
+# ----- Dev server (only used locally) -----------------------
 if __name__ == "__main__":
-    # Local development fallback — start threads manually
-    print("🚀 Dev server — starting background threads...")
-    threading.Thread(target=stock_updater, daemon=True).start()
-    threading.Thread(target=forex_updater, daemon=True).start()
-    threading.Thread(target=scheduled_full_refresh, daemon=True).start()
-    threading.Thread(target=refresh_all, daemon=True).start()
-
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
