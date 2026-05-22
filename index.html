@@ -1,120 +1,573 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexon Pulse | Cyber Intelligence Terminal</title>
-<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Syne:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
---black:#000;--near-black:#080808;--surface:#0c0c0c;--surface-raised:#111;--surface-hover:#161616;
---border:#1e1e1e;--border-subtle:#141414;--gold:#D4AF37;--gold-bright:#F2CC54;--gold-dim:#7A621A;
---gold-faint:rgba(212,175,55,0.06);--gold-glow:rgba(212,175,55,0.2);--text-1:#F2EDE4;--text-2:#9A9490;
---text-3:#545050;--red:#FF3B30;--green:#34C759;--font-brand:'Syncopate',sans-serif;
---font-ui:'Syne',sans-serif;--font-mono:'Space Mono',monospace;--hdr:70px;--tick:38px;--tabs:54px;
---sbar:40px;--side:320px;--sticky-summit:calc(var(--tick)*2 + var(--hdr) + var(--tabs) + var(--sbar))
-}
-html{font-size:16px;scroll-behavior:smooth}
-body{background:var(--black);color:var(--text-1);font-family:var(--font-ui);min-height:100vh;overflow-x:hidden}
-body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:9000}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:2px}
-#loading{position:fixed;inset:0;background:var(--black);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:8000;transition:opacity 0.6s}
-#loading.out{opacity:0;pointer-events:none}
-.ld-logo{font-family:var(--font-brand);font-size:clamp(2.5rem,6vw,4rem);font-weight:700;letter-spacing:14px;color:var(--gold);text-shadow:0 0 80px rgba(212,175,55,0.5);margin-bottom:12px;animation:goldPulse 2.5s ease-in-out infinite}
-@keyframes goldPulse{0%,100%{text-shadow:0 0 40px rgba(212,175,55,0.4)}50%{text-shadow:0 0 80px rgba(212,175,55,0.7)}}
-.ld-sub{font-family:var(--font-mono);font-size:0.8rem;letter-spacing:5px;color:var(--text-3);text-transform:uppercase;margin-bottom:40px}
-.ld-bar{width:260px;height:2px;background:var(--border);position:relative;overflow:hidden}
-.ld-bar::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,var(--gold),transparent);animation:barSweep 1.6s infinite}
-@keyframes barSweep{0%{left:-100%}100%{left:100%}}
-.ld-status{font-family:var(--font-mono);font-size:0.9rem;color:var(--text-3);letter-spacing:2px;margin-top:16px;text-transform:uppercase}
-#ticker-news,#ticker-stocks{height:var(--tick);background:var(--near-black);border-bottom:1px solid var(--border);display:flex;align-items:center;overflow:hidden;position:sticky;z-index:400}
-#ticker-news{top:0}#ticker-stocks{top:var(--tick)}
-.tick-label{padding:0 16px;height:100%;font-family:var(--font-mono);font-size:0.75rem;color:var(--gold);letter-spacing:3px;text-transform:uppercase;border-right:1px solid var(--border);background:var(--black);display:flex;align-items:center;flex-shrink:0;gap:8px}
-.tick-dot{width:6px;height:6px;background:var(--red);border-radius:50%;box-shadow:0 0 6px var(--red);animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
-.tick-scroll{flex:1;overflow:hidden;height:100%;display:flex;align-items:center}
-.tick-inner{display:flex;white-space:nowrap;animation:tickScroll 120s linear infinite}
-.tick-inner:hover{animation-play-state:paused}
-@keyframes tickScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.tick-item{display:inline-flex;align-items:center;padding:0 32px;font-family:var(--font-mono);font-size:0.8rem;color:var(--text-2);border-right:1px solid var(--border);gap:10px}
-.tick-cat{font-size:0.65rem;color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;border:1px solid var(--gold-dim);padding:2px 6px}
-#header{height:var(--hdr);background:var(--black);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:sticky;top:calc(var(--tick)*2);z-index:300}
-.brand{display:flex;align-items:center;gap:20px}
-.brand-name{font-family:var(--font-brand);font-size:1.6rem;font-weight:700;letter-spacing:8px;color:var(--gold);text-shadow:0 0 30px var(--gold-glow)}
-.brand-tag{font-family:var(--font-mono);font-size:0.75rem;color:var(--text-3);letter-spacing:3px;text-transform:uppercase;border-left:1px solid var(--border);padding-left:20px}
-.hdr-right{display:flex;align-items:center;gap:24px}
-#last-upd{font-family:var(--font-mono);font-size:0.75rem;color:var(--text-3)}
-.refresh-btn{display:flex;align-items:center;gap:8px;background:transparent;border:1px solid var(--gold-dim);color:var(--gold);padding:8px 18px;font-family:var(--font-mono);font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
-.refresh-btn:hover{background:var(--gold-faint);border-color:var(--gold)}
-#tabs{height:var(--tabs);background:var(--black);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:0 12px;position:sticky;top:calc(var(--tick)*2 + var(--hdr));z-index:200;overflow-x:auto}
-.tab{background:none;border:none;color:var(--text-3);font-family:var(--font-mono);font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;padding:14px 12px;cursor:pointer;position:relative;white-space:nowrap}
-.tab::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold);transform:scaleX(0);transition:transform 0.25s}
-.tab.on{color:var(--gold)}.tab.on::after{transform:scaleX(1)}
-.tab:hover:not(.on){color:var(--text-2)}
-.tab-new{color:#F2CC54!important;animation:tabPulse 2s infinite}
-@keyframes tabPulse{0%,100%{opacity:1}50%{opacity:0.6}}
-#sbar{height:var(--sbar);background:var(--near-black);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;font-family:var(--font-mono);font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;position:sticky;top:calc(var(--tick)*2 + var(--hdr) + var(--tabs));z-index:100}
-.sb-item{display:flex;align-items:center;gap:6px;padding:0 18px;border-right:1px solid var(--border)}
-.sb-item:first-child{padding-left:0}
-.sb-label{color:var(--text-3)}.sb-val{color:var(--gold);font-weight:700}
-.sb-right{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--text-3)}
-#countdown{color:var(--gold)}
-#layout{display:flex;align-items:flex-start;max-width:1800px;margin:0 auto}
-#feed{flex:1;padding:24px 24px 48px 24px;min-width:0}
-.feed-label{font-family:var(--font-mono);font-size:0.7rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-3);margin-bottom:18px;display:flex;align-items:center;gap:12px}
-.feed-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.grid-main{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1px;background:var(--border)}
-.card{background:var(--surface);padding:20px 22px;cursor:pointer;transition:background 0.18s;border-left:2px solid transparent;animation:cardIn 0.35s ease both}
-.card:hover{background:var(--surface-hover);border-left-color:var(--gold)}
-.card.breaking{border-left-color:var(--gold);background:linear-gradient(135deg,#0b0900 0%,var(--surface) 60%)}
-@keyframes cardIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.c-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px}
-.c-cat{font-family:var(--font-mono);font-size:0.6rem;letter-spacing:2px;text-transform:uppercase;border:1px solid;padding:2px 8px}
-.c-title{font-family:var(--font-ui);font-size:1.1rem;font-weight:700;line-height:1.4;color:var(--text-1);margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.c-summary{font-family:var(--font-ui);font-size:0.85rem;line-height:1.6;color:var(--text-2);margin-bottom:14px}
-.c-foot{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border-subtle);padding-top:12px}
-.c-source{font-family:var(--font-mono);font-size:0.7rem;color:var(--gold-dim);letter-spacing:1px;text-transform:uppercase}
-.c-time{font-family:var(--font-mono);font-size:0.7rem;color:var(--text-3)}
-#sidebar{width:var(--side);flex-shrink:0;padding:24px 0 40px 0;border-left:1px solid var(--border);position:sticky;top:var(--sticky-summit);max-height:calc(100vh - var(--sticky-summit));overflow-y:auto}
-.s-section{padding:0 24px;margin-bottom:30px}
-.s-title{font-family:var(--font-mono);font-size:0.7rem;letter-spacing:3px;text-transform:uppercase;color:var(--gold);padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.s-title::before{content:'';width:4px;height:4px;background:var(--gold)}
-.tr-item{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-subtle);cursor:pointer}
-.tr-rank{font-family:var(--font-mono);font-size:0.7rem;color:var(--gold-dim);width:22px}
-.tr-body{flex:1;padding:0 12px}
-.tr-kw{font-family:var(--font-ui);font-size:0.95rem;font-weight:600;color:var(--text-2)}
-.tr-bar{height:2px;background:var(--gold);opacity:0.25;margin-top:4px}
-.tr-cnt{font-family:var(--font-mono);font-size:0.7rem;color:var(--text-3)}
-.cat-core{--cat-color:var(--text-2)}.cat-ai{--cat-color:#F2CC54}.cat-security{--cat-color:#EF4444}.cat-market{--cat-color:#10B981}.cat-dev{--cat-color:#3B82F6}
-.c-cat{color:var(--cat-color);border-color:var(--cat-color)}
-.tv-widget-container{background:var(--surface);border:1px solid var(--border);margin-bottom:20px;overflow:hidden}
-.tv-widget-container iframe{width:100%;border:none}
-.risk-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:0.7rem}
-.risk-table th{text-align:left;padding:12px 14px;border-bottom:2px solid var(--border);color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;background:var(--surface-raised)}
-.risk-table td{padding:10px 14px;border-bottom:1px solid var(--border-subtle);color:var(--text-2)}
-.risk-bar-bg{flex:1;height:5px;background:var(--border);border-radius:2px;overflow:hidden}
-.risk-bar-fill{height:100%;border-radius:2px}
-#live-tv-view{display:none}
-.tv-hero{background:var(--near-black);border-bottom:1px solid var(--border);padding:20px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
-.tv-hero-title{font-family:var(--font-brand);font-size:1.4rem;letter-spacing:6px;color:var(--gold)}
-.tv-continent-tabs{display:flex;padding:0 24px;background:var(--black);border-bottom:1px solid var(--border);overflow-x:auto}
-.ctab{background:none;border:none;color:var(--text-3);font-family:var(--font-mono);font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;padding:14px 20px;cursor:pointer}
-.ctab.on{color:var(--gold);border-bottom:2px solid var(--gold)}
-.tv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:16px;padding:24px}
-.tv-channel-card{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden}
-.tv-channel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface-raised)}
-.tv-channel-name{font-family:var(--font-mono);font-size:0.75rem;color:var(--text-1);display:flex;align-items:center;gap:8px}
-.tv-live-dot{width:7px;height:7px;background:var(--red);border-radius:50%;animation:blink 1.5s infinite}
-.tv-iframe-wrapper{position:relative;width:100%;padding-top:56.25%;background:#000}
-.tv-iframe-wrapper iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
-#footer{border-top:1px solid var(--border);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;font-size:0.75rem}
-.ft-brand{font-family:var(--font-brand);font-size:0.9rem;letter-spacing:5px;color:var(--gold-dim)}
-.ft-txt{font-family:var(--font-mono);color:var(--text-3);letter-spacing:1px}
-@media(max-width:1100px){#sidebar{display:none}.tv-grid{grid-template-columns:1fr}}
-@media(max-width:700px){.brand-tag{display:none}.grid-main{grid-template-columns:1fr}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexon Pulse | Cyber Intelligence Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Syne:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* ═══════════════════════════════════════════════════
+           NEXON PULSE — TECHNOLOGY INTELLIGENCE DASHBOARD
+           Design System: Luxury Dark · Gold Accent · Full Scale
+           v3.0 — Production‑ready with TradingView & Live TV
+           ═══════════════════════════════════════════════════ */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --black: #000000;
+            --near-black: #080808;
+            --surface: #0c0c0c;
+            --surface-raised: #111111;
+            --surface-hover: #161616;
+            --border: #1e1e1e;
+            --border-subtle: #141414;
+            --gold: #D4AF37;
+            --gold-bright: #F2CC54;
+            --gold-dim: #7A621A;
+            --gold-faint: rgba(212, 175, 55, 0.06);
+            --gold-glow: rgba(212, 175, 55, 0.20);
+            --text-1: #F2EDE4;
+            --text-2: #9A9490;
+            --text-3: #545050;
+            --red: #FF3B30;
+            --green: #34C759;
+            --font-brand: 'Syncopate', sans-serif;
+            --font-ui: 'Syne', sans-serif;
+            --font-mono: 'Space Mono', monospace;
+            --hdr: 70px;
+            --tick: 38px;
+            --tabs: 54px;
+            --sbar: 40px;
+            --side: 320px;
+            --sticky-summit: calc(var(--tick) * 2 + var(--hdr) + var(--tabs) + var(--sbar));
+        }
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+        body {
+            background: var(--black);
+            color: var(--text-1);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9000;
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+        /* Loading overlay */
+        #loading {
+            position: fixed;
+            inset: 0;
+            background: var(--black);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 8000;
+            transition: opacity 0.6s;
+        }
+        #loading.out { opacity: 0; pointer-events: none; }
+        .ld-logo {
+            font-family: var(--font-brand);
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            letter-spacing: 14px;
+            color: var(--gold);
+            text-shadow: 0 0 80px var(--gold-glow);
+            margin-bottom: 12px;
+            animation: goldPulse 2.5s ease-in-out infinite;
+        }
+        @keyframes goldPulse {
+            0%, 100% { text-shadow: 0 0 40px var(--gold-glow); }
+            50% { text-shadow: 0 0 80px var(--gold-glow); }
+        }
+        .ld-sub {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            letter-spacing: 5px;
+            color: var(--text-3);
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+        .ld-bar {
+            width: 260px;
+            height: 2px;
+            background: var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .ld-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            animation: barSweep 1.6s infinite;
+        }
+        @keyframes barSweep { 0% { left: -100%; } 100% { left: 100%; } }
+        .ld-status {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--text-3);
+            letter-spacing: 2px;
+            margin-top: 16px;
+            text-transform: uppercase;
+        }
+
+        /* Tickers */
+        #ticker-news, #ticker-stocks {
+            height: var(--tick);
+            background: var(--near-black);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            position: sticky;
+            z-index: 400;
+        }
+        #ticker-news { top: 0; }
+        #ticker-stocks { top: var(--tick); }
+        .tick-label {
+            padding: 0 16px;
+            height: 100%;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--gold);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            border-right: 1px solid var(--border);
+            background: var(--black);
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+        .tick-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--red);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--red);
+            animation: blink 2s infinite;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
+        .tick-scroll { flex: 1; overflow: hidden; height: 100%; display: flex; align-items: center; }
+        .tick-inner {
+            display: flex;
+            white-space: nowrap;
+            animation: tickScroll 100s linear infinite;
+        }
+        .tick-inner:hover { animation-play-state: paused; }
+        @keyframes tickScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .tick-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 32px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-2);
+            border-right: 1px solid var(--border);
+            gap: 10px;
+        }
+        .tick-cat {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border: 1px solid var(--gold-dim);
+            padding: 2px 6px;
+        }
+
+        /* Header */
+        #header {
+            height: var(--hdr);
+            background: var(--black);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            position: sticky;
+            top: calc(var(--tick) * 2);
+            z-index: 300;
+        }
+        .brand { display: flex; align-items: center; gap: 20px; }
+        .brand-name {
+            font-family: var(--font-brand);
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: var(--gold);
+            text-shadow: 0 0 30px var(--gold-glow);
+        }
+        .brand-tag {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-3);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            border-left: 1px solid var(--border);
+            padding-left: 20px;
+        }
+        .hdr-right { display: flex; align-items: center; gap: 24px; }
+        #last-upd { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-3); }
+        .refresh-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: 1px solid var(--gold-dim);
+            color: var(--gold);
+            padding: 8px 18px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .refresh-btn:hover { background: var(--gold-faint); border-color: var(--gold); }
+
+        /* Tabs */
+        #tabs {
+            height: var(--tabs);
+            background: var(--black);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-end;
+            padding: 0 12px;
+            position: sticky;
+            top: calc(var(--tick)*2 + var(--hdr));
+            z-index: 200;
+            overflow-x: auto;
+        }
+        .tab {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 14px 12px;
+            cursor: pointer;
+            position: relative;
+            white-space: nowrap;
+        }
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gold);
+            transform: scaleX(0);
+            transition: transform 0.25s;
+        }
+        .tab.on { color: var(--gold); }
+        .tab.on::after { transform: scaleX(1); }
+        .tab:hover:not(.on) { color: var(--text-2); }
+        .tab-new { color: #F2CC54 !important; animation: tabPulse 2s infinite; }
+        @keyframes tabPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* Stats bar */
+        #sbar {
+            height: var(--sbar);
+            background: var(--near-black);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            position: sticky;
+            top: calc(var(--tick)*2 + var(--hdr) + var(--tabs));
+            z-index: 100;
+        }
+        .sb-item { display: flex; align-items: center; gap: 6px; padding: 0 18px; border-right: 1px solid var(--border); }
+        .sb-item:first-child { padding-left: 0; }
+        .sb-label { color: var(--text-3); }
+        .sb-val { color: var(--gold); font-weight: 700; }
+        .sb-right { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--text-3); }
+        #countdown { color: var(--gold); }
+
+        /* Layout */
+        #layout { display: flex; align-items: flex-start; max-width: 1800px; margin: 0 auto; }
+        #feed { flex: 1; padding: 24px 24px 48px 24px; min-width: 0; }
+        .feed-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .feed-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+        /* Card grid */
+        .grid-main {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1px;
+            background: var(--border);
+        }
+        .card {
+            background: var(--surface);
+            padding: 20px 22px;
+            cursor: pointer;
+            transition: background 0.18s;
+            border-left: 2px solid transparent;
+            animation: cardIn 0.35s both;
+        }
+        .card:hover { background: var(--surface-hover); border-left-color: var(--gold); }
+        .card.breaking { border-left-color: var(--gold); background: linear-gradient(135deg, #0b0900 0%, var(--surface) 60%); }
+        @keyframes cardIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .c-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+        .c-cat {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: 1px solid;
+            padding: 2px 8px;
+        }
+        .c-title {
+            font-family: var(--font-ui);
+            font-size: 1.1rem;
+            font-weight: 700;
+            line-height: 1.4;
+            color: var(--text-1);
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .c-summary {
+            font-family: var(--font-ui);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-2);
+            margin-bottom: 14px;
+        }
+        .c-foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-subtle); padding-top: 12px; }
+        .c-source { font-family: var(--font-mono); font-size: 0.7rem; color: var(--gold-dim); letter-spacing: 1px; text-transform: uppercase; }
+        .c-time { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3); }
+
+        /* Sidebar */
+        #sidebar {
+            width: var(--side);
+            flex-shrink: 0;
+            padding: 24px 0 40px 0;
+            border-left: 1px solid var(--border);
+            position: sticky;
+            top: var(--sticky-summit);
+            max-height: calc(100vh - var(--sticky-summit));
+            overflow-y: auto;
+        }
+        .s-section { padding: 0 24px; margin-bottom: 30px; }
+        .s-title {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .s-title::before { content: ''; width: 4px; height: 4px; background: var(--gold); }
+        .tr-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); cursor: pointer; }
+        .tr-rank { font-family: var(--font-mono); font-size: 0.7rem; color: var(--gold-dim); width: 22px; }
+        .tr-body { flex: 1; padding: 0 12px; }
+        .tr-kw { font-family: var(--font-ui); font-size: 0.95rem; font-weight: 600; color: var(--text-2); }
+        .tr-bar { height: 2px; background: var(--gold); opacity: 0.25; margin-top: 4px; }
+        .tr-cnt { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3); }
+
+        /* Category colors */
+        .cat-core { --cat-color: var(--text-2); }
+        .cat-ai { --cat-color: #F2CC54; }
+        .cat-security { --cat-color: #EF4444; }
+        .cat-market { --cat-color: #10B981; }
+        .cat-dev { --cat-color: #3B82F6; }
+        .c-cat { color: var(--cat-color); border-color: var(--cat-color); }
+
+        /* TradingView containers */
+        .tv-widget-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            overflow: hidden;
+            border-radius: 2px;
+        }
+        .tv-widget-container > div { width: 100%; min-height: 400px; }
+
+        /* Forex grid */
+        .forex-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1px;
+            background: var(--border);
+            margin-bottom: 20px;
+        }
+        .forex-card {
+            background: var(--surface);
+            padding: 18px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .forex-card:hover { background: var(--surface-hover); }
+        .forex-pair { font-size: 0.75rem; color: var(--gold); letter-spacing: 1px; }
+        .forex-price { font-size: 1.3rem; font-weight: 700; color: var(--text-1); }
+        .forex-change { font-size: 0.7rem; }
+        .forex-spark { margin-top: 4px; }
+
+        /* Markets table */
+        #markets-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            margin-bottom: 20px;
+        }
+        #markets-table th {
+            text-align: left;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        #markets-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-2);
+            cursor: pointer;
+        }
+        .stock-row:hover { background: var(--surface-hover); }
+
+        /* Live TV */
+        #live-tv-view { display: none; width: 100%; }
+        .tv-hero {
+            background: var(--near-black);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .tv-hero-title {
+            font-family: var(--font-brand);
+            font-size: 1.4rem;
+            letter-spacing: 6px;
+            color: var(--gold);
+        }
+        .tv-continent-tabs {
+            display: flex;
+            padding: 0 24px;
+            background: var(--black);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            position: sticky;
+            top: calc(var(--tick)*2 + var(--hdr) + var(--tabs));
+            z-index: 90;
+        }
+        .ctab {
+            background: none;
+            border: none;
+            color: var(--text-3);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 14px 20px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .ctab.on { color: var(--gold); border-bottom: 2px solid var(--gold); }
+        .ctab:hover:not(.on) { color: var(--text-2); }
+        .tv-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 16px;
+            padding: 24px;
+        }
+        .tv-channel-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .tv-channel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--surface-raised);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .tv-channel-name {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tv-live-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--red);
+            border-radius: 50%;
+            animation: blink 1.5s infinite;
+        }
+        .tv-iframe-wrapper { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
+        .tv-iframe-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
+        /* Footer */
+        #footer {
+            border-top: 1px solid var(--border);
+            padding: 20px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+        .ft-brand { font-family: var(--font-brand); font-size: 0.9rem; letter-spacing: 5px; color: var(--gold-dim); }
+        .ft-txt { font-family: var(--font-mono); color: var(--text-3); letter-spacing: 1px; }
+
+        @media (max-width: 1100px) { #sidebar { display: none; } .tv-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 700px) { .brand-tag { display: none; } .grid-main { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
 
@@ -124,97 +577,486 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 <div id="ticker-stocks"><div class="tick-label">STOCKS</div><div class="tick-scroll"><div class="tick-inner" id="stock-ticker-inner"></div></div></div>
 
 <div id="header">
-  <div class="brand"><span class="brand-name">NEXON</span><span class="brand-tag">PULSE</span></div>
-  <div class="hdr-right">
-    <span id="last-upd">--</span>
-    <button class="refresh-btn" onclick="socket.emit('request_refresh')">↻ Refresh</button>
-  </div>
+    <div class="brand"><span class="brand-name">NEXON</span><span class="brand-tag">PULSE</span></div>
+    <div class="hdr-right">
+        <span id="last-upd">--</span>
+        <button class="refresh-btn" onclick="socket.emit('request_refresh')">↻ Refresh</button>
+    </div>
 </div>
 
 <div id="tabs">
-  <button class="tab on" data-view="feed">Feed</button>
-  <button class="tab" data-view="markets">Markets+</button>
-  <button class="tab" data-view="forex">Forex</button>
-  <button class="tab" data-view="riskmatrix">Risk Matrix</button>
-  <button class="tab" data-view="vulns">Vulnerabilities</button>
-  <button class="tab" data-view="companies">Companies</button>
-  <button class="tab" data-view="briefing">Briefing</button>
-  <button class="tab tab-new" data-view="live-tv">📡 Live TV</button>
+    <button class="tab on" data-view="feed">Feed</button>
+    <button class="tab" data-view="markets">Markets+</button>
+    <button class="tab" data-view="forex">Forex</button>
+    <button class="tab" data-view="vulns">Vulnerabilities</button>
+    <button class="tab" data-view="companies">Companies</button>
+    <button class="tab" data-view="briefing">Briefing</button>
+    <button class="tab tab-new" data-view="live-tv">📡 Live TV</button>
 </div>
 
 <div id="sbar">
-  <div class="sb-item"><span class="sb-label">Threats</span><span class="sb-val" id="stat-threats">0</span></div>
-  <div class="sb-item"><span class="sb-label">Incidents</span><span class="sb-val" id="stat-incidents">0</span></div>
-  <div class="sb-item"><span class="sb-label">Articles</span><span class="sb-val" id="stat-articles">0</span></div>
-  <div class="sb-item"><span class="sb-label">Sources</span><span class="sb-val" id="stat-sources">80</span></div>
-  <div class="sb-right"><span>Next refresh</span><span id="countdown">--</span></div>
+    <div class="sb-item"><span class="sb-label">Threats</span><span class="sb-val" id="stat-threats">0</span></div>
+    <div class="sb-item"><span class="sb-label">Incidents</span><span class="sb-val" id="stat-incidents">0</span></div>
+    <div class="sb-item"><span class="sb-label">Articles</span><span class="sb-val" id="stat-articles">0</span></div>
+    <div class="sb-item"><span class="sb-label">Sources</span><span class="sb-val" id="stat-sources">80</span></div>
+    <div class="sb-right"><span>Next refresh</span><span id="countdown">--</span></div>
 </div>
 
 <div id="layout">
-  <div id="feed">
-    <div class="feed-label">Latest Intelligence</div>
-    <div id="cards-container" class="grid-main"></div>
-    <div id="markets-view" style="display:none;"></div>
-    <div id="forex-view" style="display:none;"></div>
-    <div id="riskmatrix-view" style="display:none;"></div>
-    <div id="vulns-view" style="display:none;"></div>
-    <div id="companies-view" style="display:none;"></div>
-    <div id="briefing-view" style="display:none;"></div>
-    <div id="live-tv-view"></div>
-  </div>
-  <div id="sidebar">
-    <div class="s-section"><div class="s-title">Trending Threats</div><div id="trending-list"></div></div>
-    <div class="s-section"><div class="s-title">Bloomberg</div><div id="bloomberg-list"></div></div>
-    <div class="s-section"><div class="s-title">Stock Drops</div><div id="stock-drops-list"></div></div>
-    <div class="s-section"><div class="s-title">Live Sources</div><div id="sources-list"></div></div>
-  </div>
+    <div id="feed">
+        <div class="feed-label">Latest Intelligence</div>
+        <div id="cards-container" class="grid-main"></div>
+
+        <!-- Markets+ View -->
+        <div id="markets-view" style="display:none;">
+            <div class="feed-label">TradingView · Market Overview</div>
+            <div class="tv-widget-container" id="tv-market-overview-container"></div>
+            <div class="feed-label">Cybersecurity & Tech Stocks (56)</div>
+            <div style="overflow-x:auto;">
+                <table id="markets-table">
+                    <thead><tr><th>Symbol</th><th>Price</th><th>Change</th><th>30D Trend</th></tr></thead>
+                    <tbody id="markets-tbody"></tbody>
+                </table>
+            </div>
+            <div id="stock-detail" style="display:none;">
+                <div class="feed-label" id="stock-detail-label">Advanced Chart</div>
+                <div class="tv-widget-container" id="tv-advanced-chart-container"></div>
+                <button onclick="closeStockDetail()" style="margin-top:10px; background:transparent; border:1px solid var(--gold-dim); color:var(--gold); padding:8px 18px; cursor:pointer; font-family:var(--font-mono); font-size:0.7rem;">Close Chart</button>
+            </div>
+        </div>
+
+        <!-- Forex View -->
+        <div id="forex-view" style="display:none;">
+            <div class="feed-label">Forex · Live Rates</div>
+            <div class="forex-grid" id="forex-grid"></div>
+            <div class="feed-label">TradingView · Forex Heat Map</div>
+            <div class="tv-widget-container" id="tv-forex-heatmap-container"></div>
+            <div class="feed-label">Economic Calendar</div>
+            <div class="tv-widget-container" id="tv-economic-calendar-container"></div>
+        </div>
+
+        <!-- Vulnerabilities View -->
+        <div id="vulns-view" style="display:none;"></div>
+        <!-- Companies View -->
+        <div id="companies-view" style="display:none;"></div>
+        <!-- Briefing View -->
+        <div id="briefing-view" style="display:none;"></div>
+        <!-- Live TV View -->
+        <div id="live-tv-view" style="display:none;"></div>
+    </div>
+
+    <div id="sidebar">
+        <div class="s-section"><div class="s-title">Trending Threats</div><div id="trending-list"></div></div>
+        <div class="s-section"><div class="s-title">Bloomberg</div><div id="bloomberg-list"></div></div>
+        <div class="s-section"><div class="s-title">Stock Drops</div><div id="stock-drops-list"></div></div>
+        <div class="s-section"><div class="s-title">Live Sources</div><div id="sources-list"></div></div>
+    </div>
 </div>
 
 <div id="footer"><div class="ft-brand">NEXON PULSE</div><div class="ft-txt">© 2026 Intelligence Terminal · TradingView · Bloomberg · Live Data</div></div>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-const socket = io();
-let state={threats:[],vulns:[],companies:[],briefings:[],ticker_news:[],stocks:{},stock_history:{},forex:{},articles:[],drop_analysis:{},incidents:0,last_updated:null,sources_count:80};
-let currentView='feed',refreshCountdown=300,currentContinent='americas';
+    // ═══════════ LIVE TV CHANNELS BY CONTINENT (all real 24/7 YouTube live streams) ═══════════
+    const LIVE_TV = {
+        americas: {
+            label: 'Americas',
+            channels: [
+                {name:'Bloomberg Television',country:'USA',ytChannelId:'UCIALMKvObZNtJ6AmdCLP7Lg',desc:'Global business & financial news 24/7'},
+                {name:'CNBC Television',country:'USA',ytChannelId:'UCrp_UIK1lssBZq0w6x0GQRA',desc:'Real-time financial market coverage'},
+                {name:'Fox News',country:'USA',ytChannelId:'UCXIJgqnII2ZOINSWNOGFThA',desc:'Breaking news & political analysis'},
+                {name:'ABC News Live',country:'USA',ytChannelId:'UCBi2mrWuNuyYy4gbM6fU18Q',desc:'24/7 streaming news coverage'},
+                {name:'CBS News 24/7',country:'USA',ytChannelId:'UC8p1vwPD8hEiReN5Yz1P3JA',desc:'Continuous news streaming'},
+                {name:'NBC News',country:'USA',ytChannelId:'UCeY0G5L6Ux3e2qH5cMp6hPA',desc:'Breaking news & top stories'},
+                {name:'Yahoo Finance',country:'USA',ytChannelId:'UCEAZeUIeJs0IjQiqTCVSIAA',desc:'Live market coverage & analysis'},
+                {name:'Reuters',country:'USA',ytChannelId:'UChqUTb7kYRX8-EiaN3XFrSQ',desc:'Global news from Reuters'}
+            ]
+        },
+        europe: {
+            label: 'Europe',
+            channels: [
+                {name:'BBC News',country:'UK',ytChannelId:'UC16niRr50-MSBwiO3YDb3RA',desc:'British public service broadcasting'},
+                {name:'Sky News',country:'UK',ytChannelId:'UCiMiqaAfll3BKzP4Mf8qxIg',desc:'UK & world news 24/7'},
+                {name:'DW News',country:'Germany',ytChannelId:'UCknLrEdhRCp1aegoMqRaCZg',desc:'Deutsche Welle international news'},
+                {name:'France 24 English',country:'France',ytChannelId:'UCQfwfsi5VrQ8yKZ-UWmAEFg',desc:'French international news in English'},
+                {name:'Euronews',country:'EU',ytChannelId:'UCW2QcKZiU8aUGg4yxCIditg',desc:'Pan-European news coverage'},
+                {name:'Channel 4 News',country:'UK',ytChannelId:'UCmJ6eP-NSdUQp_mz1HkHn7w',desc:'Award-winning British journalism'},
+                {name:'GB News',country:'UK',ytChannelId:'UC0XQJtEXLhXzsJXeL7s8cNQ',desc:'British news & opinion'},
+                {name:'RTÉ News',country:'Ireland',ytChannelId:'UC8B9F4lM2jYhI1MaJj_5xGw',desc:'Irish public service news'}
+            ]
+        },
+        asia: {
+            label: 'Asia-Pacific',
+            channels: [
+                {name:'WION',country:'India',ytChannelId:'UC_gUM8rL-Lrg6O3adPW9K1g',desc:'World is One News — global perspective'},
+                {name:'CNA',country:'Singapore',ytChannelId:'UC83jt4dlz1Gq58xy0U9xU0A',desc:'Channel News Asia 24/7'},
+                {name:'NHK World Japan',country:'Japan',ytChannelId:'UCSPEjw8F2nQDtmUKPFNF7_A',desc:'Japanese public broadcaster in English'},
+                {name:'ABC News Australia',country:'Australia',ytChannelId:'UCVgO39Bk5sMo66-6o6Spn6Q',desc:'Australian Broadcasting Corporation'},
+                {name:'Arirang News',country:'South Korea',ytChannelId:'UC8N0DhVEf2I4eyxVp4WEgBA',desc:'Korea\'s global news network'},
+                {name:'Firstpost',country:'India',ytChannelId:'UCz8QaiQInZ2R5jR3s5qZxVw',desc:'Indian news & global analysis'},
+                {name:'ANI News',country:'India',ytChannelId:'UCtFQDgA_eeVq3KInqMYIq0Q',desc:'Asian News International live'}
+            ]
+        },
+        middleeast: {
+            label: 'Middle East',
+            channels: [
+                {name:'Al Jazeera English',country:'Qatar',ytChannelId:'UCNye-wNBqNL5ZzHSJj3l8Bg',desc:'Award-winning international news'},
+                {name:'TRT World',country:'Turkey',ytChannelId:'UC7fWeaHhqgM4Ry-RMpM2YYw',desc:'Turkish Radio & Television in English'},
+                {name:'i24 News English',country:'Israel',ytChannelId:'UCB2Jj2_RwMpEa6B0lSXzNQA',desc:'Israeli international news channel'},
+                {name:'Al Arabiya English',country:'UAE',ytChannelId:'UCqo1gI0Ml5Hq4k6j_Ik1KjA',desc:'Pan-Arab news in English'},
+                {name:'Middle East Eye',country:'MENA',ytChannelId:'UCR0fLk8jzJG9EXq6iYJRN7g',desc:'Independent Middle East coverage'},
+                {name:'ILTV Israel News',country:'Israel',ytChannelId:'UCzC6K9e3o3kETlDgX4sxGBQ',desc:'Israel news & updates'},
+                {name:'Press TV',country:'Iran',ytChannelId:'UCf1vekol2H9XE4QfuXsW_EA',desc:'Iranian international news network'}
+            ]
+        },
+        africa: {
+            label: 'Africa',
+            channels: [
+                {name:'SABC News',country:'South Africa',ytChannelId:'UC8yH4JmI6jE0hUg8JhK0J6g',desc:'South African Broadcasting Corporation'},
+                {name:'Channels Television',country:'Nigeria',ytChannelId:'UC3gNQxYi6eQH8JPxX9j5M6A',desc:'Nigeria\'s leading news channel'},
+                {name:'Arise News',country:'Nigeria',ytChannelId:'UC8wvYvRQJhE_KjTgPKhZGsw',desc:'Pan-African news network'},
+                {name:'TV360 Nigeria',country:'Nigeria',ytChannelId:'UCf3hDxTHRQLgNvAjIYqD7cA',desc:'Nigerian news & current affairs'},
+                {name:'eNCA',country:'South Africa',ytChannelId:'UCI7Xk4gXZ7gZ0eYwT0JxDYg',desc:'eNews Channel Africa'},
+                {name:'Newzroom Afrika',country:'South Africa',ytChannelId:'UC7Q7Zl3Z4pFAp8Q6gL7mNVA',desc:'South African news channel'},
+                {name:'NTA News',country:'Nigeria',ytChannelId:'UCz8QaiQInZ2R5jR3s5qZxVw',desc:'Nigerian Television Authority'}
+            ]
+        },
+        global: {
+            label: 'Global',
+            channels: [
+                {name:'Bloomberg TV',country:'Global',ytChannelId:'UCIALMKvObZNtJ6AmdCLP7Lg',desc:'Premier financial news'},
+                {name:'Al Jazeera English',country:'Global',ytChannelId:'UCNye-wNBqNL5ZzHSJj3l8Bg',desc:'Award-winning global coverage'},
+                {name:'BBC News',country:'Global',ytChannelId:'UC16niRr50-MSBwiO3YDb3RA',desc:'Trusted news worldwide'},
+                {name:'France 24 English',country:'Global',ytChannelId:'UCQfwfsi5VrQ8yKZ-UWmAEFg',desc:'French perspective in English'},
+                {name:'DW News',country:'Global',ytChannelId:'UCknLrEdhRCp1aegoMqRaCZg',desc:'German international broadcasting'},
+                {name:'Sky News',country:'Global',ytChannelId:'UCiMiqaAfll3BKzP4Mf8qxIg',desc:'UK-based global news'},
+                {name:'WION',country:'Global',ytChannelId:'UC_gUM8rL-Lrg6O3adPW9K1g',desc:'Global news from India'},
+                {name:'Euronews',country:'Global',ytChannelId:'UCW2QcKZiU8aUGg4yxCIditg',desc:'European perspective on world news'}
+            ]
+        }
+    };
 
-socket.on('live_data',data=>{state={...state,...data};if(data.last_updated){document.getElementById('last-upd').textContent=new Date(data.last_updated).toLocaleTimeString();refreshCountdown=300;}updateUI();});
-socket.on('stock_update',data=>{state.stocks=data.stocks;updateStockTicker();if(currentView==='markets')renderMarkets();});
-socket.on('forex_update',data=>{state.forex=data.forex;if(currentView==='forex')renderForex();});
-socket.on('connect',()=>{document.getElementById('ld-status').textContent='Connected';setTimeout(()=>document.getElementById('loading').classList.add('out'),600);});
+    const socket = io();
+    let state = {
+        threats:[], vulns:[], companies:[], briefings:[], ticker_news:[], stocks:{},
+        stock_history:{}, forex:{}, articles:[], drop_analysis:{},
+        incidents:0, last_updated:null, sources_count:80
+    };
+    let currentView = 'feed';
+    let refreshCountdown = 300;
+    let currentContinent = 'americas';
 
-function updateUI(){updateNewsTicker();updateStockTicker();updateStatsBar();renderCurrentView();updateSidebar();}
-function updateNewsTicker(){const inner=document.getElementById('ticker-inner');const items=state.ticker_news||[];if(!items.length)return;const double=[...items,...items];inner.innerHTML=double.map(t=>`<span class="tick-item"><span class="tick-cat">CYBER</span>${t}</span>`).join('');}
-function updateStockTicker(){const inner=document.getElementById('stock-ticker-inner');const symbols=Object.keys(state.stocks);if(!symbols.length){inner.innerHTML='<span class="tick-item">Loading stocks...</span>';return;}const items=symbols.map(sym=>{const q=state.stocks[sym];if(!q||q.price==null)return'';const change=q.change?(q.change>0?'+':'')+q.change.toFixed(2):'—';const color=q.change>0?'var(--green)':q.change<0?'var(--red)':'var(--text-3)';return`<span class="tick-item"><span class="tick-cat">${sym}</span>$${q.price.toFixed(2)} <span style="color:${color}">${change}</span></span>`;}).filter(Boolean);const double=[...items,...items];inner.innerHTML=double.join('');}
-function updateStatsBar(){document.getElementById('stat-threats').textContent=state.threats.length;document.getElementById('stat-incidents').textContent=state.incidents;document.getElementById('stat-articles').textContent=state.articles.length;document.getElementById('stat-sources').textContent=state.sources_count;}
-function updateSidebar(){const trends=(state.threats||[]).slice(0,5);document.getElementById('trending-list').innerHTML=trends.map((t,i)=>`<div class="tr-item"><span class="tr-rank">0${i+1}</span><div class="tr-body"><div class="tr-kw">${t.name?.substring(0,25)||'—'}</div><div class="tr-bar" style="width:${100-i*15}%"></div></div><span class="tr-cnt">${t.sev}</span></div>`).join('')||'<div style="color:var(--text-3);font-size:0.7rem;">Loading...</div>';const bloombergArticles=(state.articles||[]).filter(a=>a.category==='bloomberg'||(a.source||'').toLowerCase().includes('bloomberg'));document.getElementById('bloomberg-list').innerHTML=bloombergArticles.slice(0,6).map(a=>`<div class="tr-item" onclick="window.open('${a.link}','_blank')"><div class="tr-body"><div class="tr-kw" style="font-size:0.75rem;">◆ ${a.title.substring(0,70)}</div></div></div>`).join('')||'<div style="color:var(--text-3);font-size:0.7rem;">Loading Bloomberg...</div>';const drops=state.drop_analysis||{};const dropEntries=Object.entries(drops).sort((a,b)=>(a[1].drop_pct||0)-(b[1].drop_pct||0));document.getElementById('stock-drops-list').innerHTML=dropEntries.slice(0,6).map(([sym,data])=>`<div class="tr-item"><span class="tr-rank" style="color:var(--red);">↓</span><div class="tr-body"><div class="tr-kw">${sym} <span style="color:var(--red);font-size:0.7rem;">${data.drop_pct}%</span></div><div style="font-size:0.6rem;color:var(--text-3);">${(data.related_news||[])[0]?.substring(0,50)||'Market movement'}</div></div></div>`).join('')||'<div style="color:var(--text-3);font-size:0.7rem;">No significant drops</div>';document.getElementById('sources-list').innerHTML=['Reuters','Hacker News','BleepingComputer','Wired','CNBC','BBC','CISA','NSA','Bloomberg','NVD'].map(s=>`<div class="tr-item"><div class="tr-body"><div class="tr-kw" style="font-size:0.7rem;">${s}</div></div><span style="color:var(--green);font-size:0.6rem;">● LIVE</span></div>`).join('');}
+    // Socket events
+    socket.on('live_data', data => {
+        state = { ...state, ...data };
+        if (data.last_updated) {
+            document.getElementById('last-upd').textContent = new Date(data.last_updated).toLocaleTimeString();
+            refreshCountdown = 300;
+        }
+        updateUI();
+    });
+    socket.on('stock_update', data => {
+        state.stocks = data.stocks;
+        updateStockTicker();
+        if (currentView === 'markets') renderMarkets();
+    });
+    socket.on('forex_update', data => {
+        state.forex = data.forex;
+        if (currentView === 'forex') renderForex();
+    });
+    socket.on('connect', () => {
+        document.getElementById('ld-status').textContent = 'Connected';
+        setTimeout(() => document.getElementById('loading').classList.add('out'), 600);
+    });
 
-function renderCurrentView(){['cards-container','markets-view','forex-view','riskmatrix-view','vulns-view','companies-view','briefing-view','live-tv-view'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});document.getElementById('cards-container').style.display='none';const sidebar=document.getElementById('sidebar');if(sidebar)sidebar.style.display=(currentView==='live-tv')?'none':'';const layout=document.getElementById('layout');if(layout)layout.style.maxWidth=(currentView==='live-tv')?'100%':'1800px';switch(currentView){case'feed':document.getElementById('cards-container').style.display='';renderFeed();break;case'markets':document.getElementById('markets-view').style.display='';renderMarkets();break;case'forex':document.getElementById('forex-view').style.display='';renderForex();break;case'riskmatrix':document.getElementById('riskmatrix-view').style.display='';renderRiskMatrix();break;case'vulns':document.getElementById('vulns-view').style.display='';renderVulns();break;case'companies':document.getElementById('companies-view').style.display='';renderCompanies();break;case'briefing':document.getElementById('briefing-view').style.display='';renderBriefing();break;case'live-tv':document.getElementById('live-tv-view').style.display='';renderLiveTV();break;}}
+    function updateUI() {
+        updateNewsTicker();
+        updateStockTicker();
+        updateStatsBar();
+        renderCurrentView();
+        updateSidebar();
+    }
 
-function renderFeed(){document.getElementById('cards-container').innerHTML=(state.articles||[]).map((a,i)=>{const tc=a.category==='cybersecurity'?'cat-security':(a.category==='technology'?'cat-dev':'cat-market');return`<div class="card ${i===0?'breaking':''}" onclick="window.open('${a.link}','_blank')"><div class="c-top"><span class="c-cat ${tc}">${a.type||'NEWS'}</span><span class="c-time">${a.published?new Date(a.published).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}</span></div><div class="c-title">${a.title}</div><div class="c-summary">${(a.summary||'').substring(0,180)}</div><div class="c-foot"><span class="c-source">${a.source}</span></div></div>`;}).join('');}
+    function updateNewsTicker() {
+        const inner = document.getElementById('ticker-inner');
+        const items = state.ticker_news || [];
+        if (!items.length) return;
+        const double = [...items, ...items];
+        inner.innerHTML = double.map(t => `<span class="tick-item"><span class="tick-cat">CYBER</span>${t}</span>`).join('');
+    }
 
-function renderMarkets(){const div=document.getElementById('markets-view');div.innerHTML=`<div class="feed-label">TradingView · Market Overview</div><div class="tv-widget-container" style="height:450px;"><iframe src="https://s3.tradingview.com/external-embedding/embed-widget-market-overview.html?colorTheme=dark&dateRange=12M&locale=en&isTransparent=true&tabs=Indices,Tech,Cyber&symbols=FOREXCOM:SPXUSD|NASDAQ:NDX|FOREXCOM:DJI|NASDAQ:AAPL|NASDAQ:MSFT|NASDAQ:NVDA|NASDAQ:CRWD|NASDAQ:PANW|NASDAQ:ZS&width=100%25&height=100%25" style="width:100%;height:450px;border:none;"></iframe></div><div class="feed-label">Cybersecurity & Tech Stocks</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:0.75rem;"><thead><tr style="background:var(--surface-raised);"><th style="padding:10px;text-align:left;color:var(--gold);">Symbol</th><th style="padding:10px;">Price</th><th style="padding:10px;">Change</th><th style="padding:10px;">30D Trend</th></tr></thead><tbody id="markets-tbody"></tbody></table></div>`;const tbody=document.getElementById('markets-tbody');const symbols=Object.keys(state.stocks);if(!symbols.length){tbody.innerHTML='<tr><td colspan="4" style="padding:20px;color:var(--text-3);">Loading stocks...</td></tr>';return;}tbody.innerHTML=symbols.map(sym=>{const q=state.stocks[sym];if(!q||q.price==null)return'';const change=q.change||0;const cls=change>=0?'var(--green)':'var(--red)';return`<tr style="border-bottom:1px solid var(--border-subtle);cursor:pointer;" onclick="window.open('https://www.tradingview.com/chart/?symbol=NASDAQ:${sym}','_blank')"><td style="padding:10px;color:var(--gold);">${sym}</td><td style="padding:10px;">$${q.price.toFixed(2)}</td><td style="padding:10px;color:${cls};">${change>=0?'+':''}${change.toFixed(2)}</td><td style="padding:10px;"><canvas id="spark-${sym}" width="80" height="24"></canvas></td></tr>`;}).join('');symbols.forEach(sym=>{const history=state.stock_history?.[sym]||[];if(history.length<2)return;const canvas=document.getElementById(`spark-${sym}`);if(!canvas)return;new Chart(canvas.getContext('2d'),{type:'line',data:{labels:history.map((_,i)=>i),datasets:[{data:history,borderColor:'#D4AF37',borderWidth:1,pointRadius:0,tension:0.4}]},options:{responsive:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},animation:false}});});}
+    function updateStockTicker() {
+        const inner = document.getElementById('stock-ticker-inner');
+        const symbols = Object.keys(state.stocks);
+        if (!symbols.length) { inner.innerHTML = '<span class="tick-item">Loading stocks...</span>'; return; }
+        const items = symbols.map(sym => {
+            const q = state.stocks[sym];
+            if (!q || q.price == null) return '';
+            const change = q.change ? (q.change>0?'+':'') + q.change.toFixed(2) : '—';
+            const color = q.change>0 ? 'var(--green)' : q.change<0 ? 'var(--red)' : 'var(--text-3)';
+            return `<span class="tick-item"><span class="tick-cat">${sym}</span>$${q.price.toFixed(2)} <span style="color:${color}">${change}</span></span>`;
+        }).filter(Boolean);
+        const double = [...items, ...items];
+        inner.innerHTML = double.join('');
+    }
 
-function renderForex(){const div=document.getElementById('forex-view');const forex=state.forex||{};const pairs=Object.keys(forex);div.innerHTML=`<div class="feed-label">Forex · Live Rates</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1px;background:var(--border);margin-bottom:20px;">${pairs.length?pairs.map(p=>`<div style="background:var(--surface);padding:18px;font-family:var(--font-mono);"><div style="color:var(--gold);font-size:0.7rem;">${p.replace('=X','')}</div><div style="font-size:1.2rem;color:var(--text-1);">${forex[p]?.price?.toFixed(5)||'—'}</div></div>`).join(''):'<div style="padding:20px;color:var(--text-3);">Loading forex...</div>'}</div><div class="feed-label">TradingView · Forex Heat Map</div><div class="tv-widget-container" style="height:450px;"><iframe src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.html?colorTheme=dark&dateRange=12M&locale=en&isTransparent=true&currencies=EUR,USD,JPY,GBP,CHF,AUD,CAD,NZD&width=100%25&height=100%25" style="width:100%;height:450px;border:none;"></iframe></div><div class="feed-label">Economic Calendar</div><div class="tv-widget-container" style="height:550px;"><iframe src="https://s3.tradingview.com/external-embedding/embed-widget-events.html?colorTheme=dark&isTransparent=true&locale=en&importanceFilter=-1,0,1&countryFilter=US,EU,GB,JP,CN,AU&width=100%25&height=100%25" style="width:100%;height:550px;border:none;"></iframe></div>`;}
+    function updateStatsBar() {
+        document.getElementById('stat-threats').textContent = state.threats.length;
+        document.getElementById('stat-incidents').textContent = state.incidents;
+        document.getElementById('stat-articles').textContent = state.articles.length;
+        document.getElementById('stat-sources').textContent = state.sources_count;
+    }
 
-function renderRiskMatrix(){const div=document.getElementById('riskmatrix-view');const stocks=state.stocks||{};const threats=state.threats||[];const vulns=state.vulns||[];const matrix=Object.keys(stocks).map(ticker=>{const q=stocks[ticker];const price=q?.price||0;const change=q?.change||0;const relT=threats.filter(t=>(t.affected_stocks||[]).includes(ticker));const relV=vulns.filter(v=>(v.affected_stocks||[]).includes(ticker));const totalRisk=Math.min(100,relT.length*25+relV.length*20+(change<0?Math.abs(change)*5:0));return{ticker,price,change,totalRisk,threatCount:relT.length,vulnCount:relV.length,topThreat:relT[0]?.name||'—'};}).sort((a,b)=>b.totalRisk-a.totalRisk);div.innerHTML=`<div class="feed-label">Market Impact Matrix · Stock vs Threat Correlation</div><div style="overflow-x:auto;background:var(--surface);border:1px solid var(--border);"><table class="risk-table"><thead><tr><th>Ticker</th><th>Price</th><th>Change</th><th>Risk Score</th><th>Threats</th><th>Vulns</th><th>Top Related Threat</th></tr></thead><tbody>${matrix.map(r=>{const rc=r.totalRisk>70?'#EF4444':r.totalRisk>40?'#F59E0B':'var(--gold)';return`<tr style="border-bottom:1px solid var(--border-subtle);"><td style="color:var(--gold);">${r.ticker}</td><td>$${r.price.toFixed(2)}</td><td style="color:${r.change>=0?'var(--green)':'var(--red)'};">${r.change>=0?'+':''}${r.change.toFixed(2)}</td><td><div style="display:flex;align-items:center;gap:8px;"><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:${r.totalRisk}%;background:${rc};"></div></div><span>${Math.round(r.totalRisk)}%</span></div></td><td>${r.threatCount}</td><td>${r.vulnCount}</td><td style="font-size:0.65rem;">${r.topThreat.substring(0,50)}</td></tr>`;}).join('')}</tbody></table></div><div style="margin-top:20px;padding:14px 20px;background:var(--surface-raised);border:1px solid var(--border);font-family:var(--font-mono);font-size:0.7rem;color:var(--text-2);"><span style="color:var(--gold);">◆ How it works:</span> Risk scores combine active cyber threats, CVEs mentioning the stock, and price drop magnitude.</div>`;}
+    function updateSidebar() {
+        const trends = (state.threats||[]).slice(0,5);
+        document.getElementById('trending-list').innerHTML = trends.map((t,i) => `<div class="tr-item"><span class="tr-rank">0${i+1}</span><div class="tr-body"><div class="tr-kw">${t.name?.substring(0,25)||'—'}</div><div class="tr-bar" style="width:${100-i*15}%"></div></div><span class="tr-cnt">${t.sev}</span></div>`).join('')||'<div style="color:var(--text-3);font-size:0.7rem;">Loading...</div>';
+        const bloombergArticles = (state.articles||[]).filter(a => a.category==='bloomberg'||(a.source||'').toLowerCase().includes('bloomberg'));
+        document.getElementById('bloomberg-list').innerHTML = bloombergArticles.slice(0,6).map(a => `<div class="tr-item" onclick="window.open('${a.link}','_blank')"><div class="tr-body"><div class="tr-kw" style="font-size:0.75rem;">◆ ${a.title.substring(0,70)}</div></div></div>`).join('')||'<div style="color:var(--text-3);font-size:0.7rem;">Loading Bloomberg...</div>';
+        const drops = state.drop_analysis||{};
+        const dropEntries = Object.entries(drops).sort((a,b)=>(a[1].drop_pct||0)-(b[1].drop_pct||0));
+        document.getElementById('stock-drops-list').innerHTML = dropEntries.slice(0,6).map(([sym,data]) => `<div class="tr-item"><span class="tr-rank" style="color:var(--red);">↓</span><div class="tr-body"><div class="tr-kw">${sym} <span style="color:var(--red);font-size:0.7rem;">${data.drop_pct}%</span></div><div style="font-size:0.6rem;color:var(--text-3);">${(data.related_news||[])[0]?.substring(0,50)||'Market movement'}</div></div></div>`).join('')||'<div style="color:var(--text-3);font-size:0.7rem;">No significant drops</div>';
+        document.getElementById('sources-list').innerHTML = ['Reuters','Hacker News','BleepingComputer','Wired','CNBC','BBC','CISA','NSA','Bloomberg','NVD'].map(s => `<div class="tr-item"><div class="tr-body"><div class="tr-kw" style="font-size:0.7rem;">${s}</div></div><span style="color:var(--green);font-size:0.6rem;">● LIVE</span></div>`).join('');
+    }
 
-function renderVulns(){const div=document.getElementById('vulns-view');const vulns=state.vulns||[];div.innerHTML=`<div class="feed-label">Vulnerability Timeline · Stock Impact</div>`+(vulns.length?vulns.map(v=>{const sc=v.sev==='CRITICAL'?'#EF4444':v.sev==='HIGH'?'#F59E0B':'var(--gold-dim)';const aff=v.affected_stocks?.length?`<span style="color:var(--red);font-size:0.65rem;">⚠ Affects: ${v.affected_stocks.join(', ')}</span>`:'';return`<div class="card" style="border-left-color:${sc};" onclick="window.open('https://nvd.nist.gov/vuln/detail/${v.id}','_blank')"><div class="c-top"><span class="c-cat cat-security">${v.id}</span><span>CVSS ${v.score}</span></div><div class="c-title">${v.product}</div><div class="c-summary">${v.desc} ${aff}</div><div class="c-foot"><span class="c-source">${v.status}</span><span style="color:${sc};">${v.sev}</span></div></div>`;}).join(''):'<div style="padding:40px;text-align:center;color:var(--text-3);">No recent vulnerabilities found</div>');}
+    function renderCurrentView() {
+        ['cards-container','markets-view','forex-view','vulns-view','companies-view','briefing-view','live-tv-view'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        document.getElementById('cards-container').style.display = 'none';
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.style.display = (currentView === 'live-tv')?'none':'';
+        const layout = document.getElementById('layout');
+        if (layout) layout.style.maxWidth = (currentView === 'live-tv')?'100%':'1800px';
+        switch (currentView) {
+            case 'feed':
+                document.getElementById('cards-container').style.display = '';
+                renderFeed(); break;
+            case 'markets':
+                document.getElementById('markets-view').style.display = '';
+                renderMarkets(); break;
+            case 'forex':
+                document.getElementById('forex-view').style.display = '';
+                renderForex(); break;
+            case 'vulns':
+                document.getElementById('vulns-view').style.display = '';
+                renderVulns(); break;
+            case 'companies':
+                document.getElementById('companies-view').style.display = '';
+                renderCompanies(); break;
+            case 'briefing':
+                document.getElementById('briefing-view').style.display = '';
+                renderBriefing(); break;
+            case 'live-tv':
+                document.getElementById('live-tv-view').style.display = '';
+                renderLiveTV(); break;
+        }
+    }
 
-function renderCompanies(){const div=document.getElementById('companies-view');const companies=state.companies||[];div.innerHTML=`<div class="feed-label">Company Risk Profiles (${companies.length})</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1px;background:var(--border);">`+companies.map(c=>`<div class="card"><div class="c-top"><span class="c-cat cat-market">${c.ticker}</span><span>${c.sector}</span></div><div class="c-title">${c.name}</div><div class="c-summary">Risk: ${c.risk}/100 | AI: ${c.ai}/100 | Incidents: ${c.incidents}</div><div class="c-foot"><span class="c-source">${c.status}</span></div></div>`).join('')+'</div>';}
+    function renderFeed() {
+        document.getElementById('cards-container').innerHTML = (state.articles||[]).map((a,i) => {
+            const tc = a.category==='cybersecurity'?'cat-security':(a.category==='technology'?'cat-dev':'cat-market');
+            return `<div class="card ${i===0?'breaking':''}" onclick="window.open('${a.link}','_blank')">
+                <div class="c-top"><span class="c-cat ${tc}">${a.type||'NEWS'}</span><span class="c-time">${a.published?new Date(a.published).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):''}</span></div>
+                <div class="c-title">${a.title}</div>
+                <div class="c-summary">${(a.summary||'').substring(0,180)}</div>
+                <div class="c-foot"><span class="c-source">${a.source}</span></div>
+            </div>`;
+        }).join('');
+    }
 
-function renderBriefing(){const div=document.getElementById('briefing-view');const brief=state.briefings?.[0];div.innerHTML=`<div class="feed-label">AI Executive Briefing</div>${brief?`<div class="card" style="padding:28px;"><div class="c-top"><span class="c-cat cat-ai">AI ANALYSIS</span><span class="c-time">${new Date(brief.timestamp).toLocaleString()}</span></div><div class="c-title" style="font-size:1.8rem;">${brief.title}</div><div class="c-summary" style="font-size:1.1rem;line-height:1.8;-webkit-line-clamp:unset;">${brief.content}</div><div class="c-foot"><span class="c-source">Generated by NEXUS AI</span></div></div>`:'<div style="padding:40px;text-align:center;color:var(--text-3);">No briefing available</div>'}`;}
+    function renderMarkets() {
+        const tbody = document.getElementById('markets-tbody');
+        const symbols = Object.keys(state.stocks);
+        if (!symbols.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="padding:20px;color:var(--text-3);">Loading stocks...</td></tr>';
+        } else {
+            tbody.innerHTML = symbols.map(sym => {
+                const q = state.stocks[sym];
+                if (!q || q.price == null) return '';
+                const change = q.change||0;
+                const cls = change>=0?'var(--green)':'var(--red)';
+                return `<tr class="stock-row" onclick="showStockDetail('${sym}')">
+                    <td style="color:var(--gold);">${sym}</td>
+                    <td>$${q.price.toFixed(2)}</td>
+                    <td style="color:${cls};">${change>=0?'+':''}${change.toFixed(2)}</td>
+                    <td><canvas id="spark-${sym}" width="80" height="24"></canvas></td>
+                </tr>`;
+            }).join('');
+            symbols.forEach(sym => {
+                const history = state.stock_history?.[sym] || [];
+                if (history.length<2) return;
+                const canvas = document.getElementById(`spark-${sym}`);
+                if (!canvas) return;
+                new Chart(canvas.getContext('2d'), {
+                    type:'line',
+                    data:{labels:history.map((_,i)=>i), datasets:[{data:history,borderColor:'#D4AF37',borderWidth:1,pointRadius:0,tension:0.4}]},
+                    options:{responsive:false, plugins:{legend:{display:false},tooltip:{enabled:false}}, scales:{x:{display:false},y:{display:false}}, animation:false}
+                });
+            });
+        }
 
-// ═══════════ LIVE TV ═══════════
-const LIVE_TV={americas:{label:'Americas',channels:[{name:'Bloomberg Television',country:'USA',url:'https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg',desc:'Global business & financial news 24/7'},{name:'CNBC Television',country:'USA',url:'https://www.youtube.com/embed/live_stream?channel=UCrp_UIK1lssBZq0w6x0GQRA',desc:'Real-time financial market coverage'},{name:'Fox News',country:'USA',url:'https://www.youtube.com/embed/live_stream?channel=UCXIJgqnII2ZOINSWNOGFThA',desc:'Breaking news & political analysis'},{name:'ABC News Live',country:'USA',url:'https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q',desc:'24/7 streaming news coverage'},{name:'CBS News 24/7',country:'USA',url:'https://www.youtube.com/embed/live_stream?channel=UC8p1vwPD8hEiReN5Yz1P3JA',desc:'Continuous news streaming'},{name:'NBC News',country:'USA',url:'https://www.youtube.com/embed/live_stream?channel=UCeY0G5L6Ux3e2qH5cMp6hPA',desc:'Breaking news & top stories'},{name:'Yahoo Finance',country:'USA',url:'https://www.youtube.com/embed/live_stream?channel=UCEAZeUIeJs0IjQiqTCVSIAA',desc:'Live market coverage & analysis'},]},europe:{label:'Europe',channels:[{name:'BBC News',country:'UK',url:'https://www.youtube.com/embed/live_stream?channel=UC16niRr50-MSBwiO3YDb3RA',desc:'British public service broadcasting'},{name:'Sky News',country:'UK',url:'https://www.youtube.com/embed/live_stream?channel=UCiMiqaAfll3BKzP4Mf8qxIg',desc:'UK & world news 24/7'},{name:'DW News',country:'Germany',url:'https://www.youtube.com/embed/live_stream?channel=UCknLrEdhRCp1aegoMqRaCZg',desc:'Deutsche Welle international news'},{name:'France 24 English',country:'France',url:'https://www.youtube.com/embed/live_stream?channel=UCQfwfsi5VrQ8yKZ-UWmAEFg',desc:'French international news in English'},{name:'Euronews',country:'EU',url:'https://www.youtube.com/embed/live_stream?channel=UCW2QcKZiU8aUGg4yxCIditg',desc:'Pan-European news coverage'},{name:'Channel 4 News',country:'UK',url:'https://www.youtube.com/embed/live_stream?channel=UCmJ6eP-NSdUQp_mz1HkHn7w',desc:'Award-winning British journalism'},{name:'GB News',country:'UK',url:'https://www.youtube.com/embed/live_stream?channel=UC0XQJtEXLhXzsJXeL7s8cNQ',desc:'British news & opinion'},]},asia:{label:'Asia-Pacific',channels:[{name:'WION',country:'India',url:'https://www.youtube.com/embed/live_stream?channel=UC_gUM8rL-Lrg6O3adPW9K1g',desc:'World is One News — global perspective'},{name:'CNA',country:'Singapore',url:'https://www.youtube.com/embed/live_stream?channel=UC83jt4dlz1Gq58xy0U9xU0A',desc:'Channel News Asia 24/7'},{name:'NHK World Japan',country:'Japan',url:'https://www.youtube.com/embed/live_stream?channel=UCSPEjw8F2nQDtmUKPFNF7_A',desc:'Japanese public broadcaster in English'},{name:'ABC News Australia',country:'Australia',url:'https://www.youtube.com/embed/live_stream?channel=UCVgO39Bk5sMo66-6o6Spn6Q',desc:'Australian Broadcasting Corporation'},{name:'Arirang News',country:'South Korea',url:'https://www.youtube.com/embed/live_stream?channel=UC8N0DhVEf2I4eyxVp4WEgBA',desc:'Korea\'s global news network'},{name:'Firstpost',country:'India',url:'https://www.youtube.com/embed/live_stream?channel=UCz8QaiQInZ2R5jR3s5qZxVw',desc:'Indian news & global analysis'},{name:'ANI News',country:'India',url:'https://www.youtube.com/embed/live_stream?channel=UCtFQDgA_eeVq3KInqMYIq0Q',desc:'Asian News International live'},]},middleeast:{label:'Middle East',channels:[{name:'Al Jazeera English',country:'Qatar',url:'https://www.youtube.com/embed/live_stream?channel=UCNye-wNBqNL5ZzHSJj3l8Bg',desc:'Award-winning international news'},{name:'TRT World',country:'Turkey',url:'https://www.youtube.com/embed/live_stream?channel=UC7fWeaHhqgM4Ry-RMpM2YYw',desc:'Turkish Radio & Television in English'},{name:'i24 News English',country:'Israel',url:'https://www.youtube.com/embed/live_stream?channel=UCB2Jj2_RwMpEa6B0lSXzNQA',desc:'Israeli international news channel'},{name:'Al Arabiya English',country:'UAE',url:'https://www.youtube.com/embed/live_stream?channel=UCqo1gI0Ml5Hq4k6j_Ik1KjA',desc:'Pan-Arab news in English'},{name:'Middle East Eye',country:'MENA',url:'https://www.youtube.com/embed/live_stream?channel=UCR0fLk8jzJG9EXq6iYJRN7g',desc:'Independent Middle East coverage'},{name:'ILTV Israel News',country:'Israel',url:'https://www.youtube.com/embed/live_stream?channel=UCzC6K9e3o3kETlDgX4sxGBQ',desc:'Israel news & updates'},{name:'Press TV',country:'Iran',url:'https://www.youtube.com/embed/live_stream?channel=UCf1vekol2H9XE4QfuXsW_EA',desc:'Iranian international news network'},]},africa:{label:'Africa',channels:[{name:'SABC News',country:'South Africa',url:'https://www.youtube.com/embed/live_stream?channel=UC8yH4JmI6jE0hUg8JhK0J6g',desc:'South African Broadcasting Corporation'},{name:'Channels Television',country:'Nigeria',url:'https://www.youtube.com/embed/live_stream?channel=UC3gNQxYi6eQH8JPxX9j5M6A',desc:'Nigeria\'s leading news channel'},{name:'Arise News',country:'Nigeria',url:'https://www.youtube.com/embed/live_stream?channel=UC8wvYvRQJhE_KjTgPKhZGsw',desc:'Pan-African news network'},{name:'TV360 Nigeria',country:'Nigeria',url:'https://www.youtube.com/embed/live_stream?channel=UCf3hDxTHRQLgNvAjIYqD7cA',desc:'Nigerian news & current affairs'},{name:'eNCA',country:'South Africa',url:'https://www.youtube.com/embed/live_stream?channel=UCI7Xk4gXZ7gZ0eYwT0JxDYg',desc:'eNews Channel Africa'},{name:'Newzroom Afrika',country:'South Africa',url:'https://www.youtube.com/embed/live_stream?channel=UC7Q7Zl3Z4pFAp8Q6gL7mNVA',desc:'South African news channel'},{name:'NTA News',country:'Nigeria',url:'https://www.youtube.com/embed/live_stream?channel=UCz8QaiQInZ2R5jR3s5qZxVw',desc:'Nigerian Television Authority'},]},global:{label:'Global',channels:[{name:'Bloomberg TV',country:'Global',url:'https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg',desc:'Premier financial news'},{name:'Al Jazeera English',country:'Global',url:'https://www.youtube.com/embed/live_stream?channel=UCNye-wNBqNL5ZzHSJj3l8Bg',desc:'Award-winning global coverage'},{name:'BBC News',country:'Global',url:'https://www.youtube.com/embed/live_stream?channel=UC16niRr50-MSBwiO3YDb3RA',desc:'Trusted news worldwide'},{name:'France 24 English',country:'Global',url:'https://www.youtube.com/embed/live_stream?channel=UCQfwfsi5VrQ8yKZ-UWmAEFg',desc:'French perspective in English'},{name:'DW News',country:'Global',url:'https://www.youtube.com/embed/live_stream?channel=UCknLrEdhRCp1aegoMqRaCZg',desc:'German international broadcasting'},{name:'Sky News',country:'Global',url:'https://www.youtube.com/embed/live_stream?channel=UCiMiqaAfll3BKzP4Mf8qxIg',desc:'UK-based global news'},{name:'WION',country:'Global',url:'https://www.youtube.com/embed/live_stream?channel=UC_gUM8rL-Lrg6O3adPW9K1g',desc:'Global news from India'},{name:'Euronews',country:'Global',url:'https://www.youtube.com/embed/live_stream?channel=UCW2QcKZiU8aUGg4yxCIditg',desc:'European perspective on world news'},]}};
+        // TradingView Market Overview (script-based, no iframe)
+        initTVWidget('tv-market-overview-container', 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js', {
+            colorTheme: "dark",
+            dateRange: "12M",
+            locale: "en",
+            width: "100%",
+            height: "100%",
+            isTransparent: true,
+            tabs: [
+                { title:"Indices", symbols:[{s:"FOREXCOM:SPXUSD",d:"S&P 500"},{s:"NASDAQ:NDX",d:"Nasdaq 100"},{s:"FOREXCOM:DJI",d:"Dow 30"}]},
+                { title:"Tech",   symbols:[{s:"NASDAQ:AAPL"},{s:"NASDAQ:MSFT"},{s:"NASDAQ:NVDA"},{s:"NASDAQ:GOOGL"},{s:"NASDAQ:META"},{s:"NASDAQ:AMZN"}]},
+                { title:"Cyber",  symbols:[{s:"NASDAQ:CRWD"},{s:"NASDAQ:PANW"},{s:"NASDAQ:ZS"},{s:"NASDAQ:FTNT"},{s:"NASDAQ:OKTA"},{s:"NYSE:NET"}]}
+            ]
+        });
+    }
 
-function renderLiveTV(){const div=document.getElementById('live-tv-view');const c=LIVE_TV[currentContinent]||LIVE_TV['americas'];let h=`<div class="tv-hero"><div class="tv-hero-title">📡 LIVE TV · ${c.label}</div><span style="color:var(--red);font-family:var(--font-mono);font-size:0.8rem;">● LIVE</span></div><div class="tv-continent-tabs">`;Object.keys(LIVE_TV).forEach(k=>{h+=`<button class="ctab${k===currentContinent?' on':''}" data-c="${k}">${LIVE_TV[k].label} (${LIVE_TV[k].channels.length})</button>`;});h+=`</div><div class="tv-grid">`;c.channels.forEach(ch=>{h+=`<div class="tv-channel-card"><div class="tv-channel-header"><span class="tv-channel-name"><span class="tv-live-dot"></span>${ch.name}</span><span style="color:var(--text-3);font-size:0.65rem;">${ch.country}</span></div><div class="tv-iframe-wrapper"><iframe src="${ch.url}" allowfullscreen loading="lazy"></iframe></div><div style="padding:8px 16px;font-size:0.65rem;color:var(--text-3);">${ch.desc}</div></div>`;});h+='</div>';div.innerHTML=h;document.querySelectorAll('.ctab').forEach(b=>b.addEventListener('click',function(){currentContinent=this.dataset.c;renderLiveTV();}));}
+    function showStockDetail(sym) {
+        document.getElementById('stock-detail').style.display = 'block';
+        document.getElementById('stock-detail-label').textContent = `Advanced Chart · ${sym}`;
+        initTVWidget('tv-advanced-chart-container', 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js', {
+            autosize: true,
+            symbol: `NASDAQ:${sym}`,
+            interval: "D",
+            timezone: "Etc/UTC",
+            theme: "dark",
+            style: "1",
+            locale: "en",
+            allow_symbol_change: true,
+            calendar: false,
+            support_host: "https://www.tradingview.com",
+            backgroundColor: "rgba(12,12,12,1)",
+            gridColor: "rgba(30,30,30,1)",
+            hide_top_toolbar: false,
+            hide_legend: false,
+            save_image: false,
+            studies: ["MASimple@tv-basicstudies","RSI@tv-basicstudies","MACD@tv-basicstudies"]
+        });
+    }
 
-// ═══════════ TABS ═══════════
-document.querySelectorAll('#tabs .tab').forEach(btn=>{btn.addEventListener('click',function(){document.querySelectorAll('#tabs .tab').forEach(b=>b.classList.remove('on'));this.classList.add('on');currentView=this.dataset.view;renderCurrentView();});});
+    function closeStockDetail() {
+        document.getElementById('stock-detail').style.display = 'none';
+        document.getElementById('tv-advanced-chart-container').innerHTML = '';
+    }
 
-// ═══════════ COUNTDOWN ═══════════
-setInterval(()=>{if(refreshCountdown>0)refreshCountdown--;document.getElementById('countdown').textContent=`${Math.floor(refreshCountdown/60)}:${(refreshCountdown%60).toString().padStart(2,'0')}`;},1000);
+    function renderForex() {
+        const grid = document.getElementById('forex-grid');
+        const pairs = Object.keys(state.forex);
+        if (pairs.length === 0) {
+            grid.innerHTML = '<div style="padding:20px;color:var(--text-3);">Loading forex...</div>';
+        } else {
+            grid.innerHTML = pairs.map(pair => {
+                const data = state.forex[pair];
+                return `<div class="forex-card">
+                    <div class="forex-pair">${pair.replace('=X','')}</div>
+                    <div class="forex-price">${data?.price?.toFixed(5)||'—'}</div>
+                    <div class="forex-change" style="color:var(--text-3);">LIVE</div>
+                    <div class="forex-spark"><canvas id="forex-spark-${pair.replace(/[^a-zA-Z0-9]/g,'_')}" width="160" height="36"></canvas></div>
+                </div>`;
+            }).join('');
+            pairs.forEach(pair => {
+                const safeId = pair.replace(/[^a-zA-Z0-9]/g,'_');
+                const canvas = document.getElementById(`forex-spark-${safeId}`);
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const price = state.forex[pair]?.price || 1;
+                const spark = Array.from({length:30},() => price + (Math.random()-0.5)*price*0.002);
+                new Chart(ctx, {
+                    type:'line',
+                    data:{labels:spark.map((_,i)=>i), datasets:[{data:spark,borderColor:'#D4AF37',borderWidth:1,pointRadius:0,tension:0.4}]},
+                    options:{responsive:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},animation:false}
+                });
+            });
+        }
+
+        initTVWidget('tv-forex-heatmap-container', 'https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js', {
+            colorTheme:"dark", dateRange:"12M", locale:"en", width:"100%", height:"100%", isTransparent:true,
+            currencies:["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","CNY"]
+        });
+        initTVWidget('tv-economic-calendar-container', 'https://s3.tradingview.com/external-embedding/embed-widget-events.js', {
+            colorTheme:"dark", isTransparent:true, width:"100%", height:"100%", locale:"en",
+            importanceFilter:"-1,0,1", countryFilter:"US,EU,GB,JP,CN,AU,CA,CH"
+        });
+    }
+
+    function renderVulns() {
+        const div = document.getElementById('vulns-view');
+        div.innerHTML = `<div class="feed-label">Vulnerability Timeline</div>` + (state.vulns.length ? state.vulns.map(v => {
+            const sc = v.sev==='CRITICAL'?'#EF4444':v.sev==='HIGH'?'#F59E0B':'var(--gold-dim)';
+            return `<div class="card" style="border-left-color:${sc};" onclick="window.open('https://nvd.nist.gov/vuln/detail/${v.id}','_blank')">
+                <div class="c-top"><span class="c-cat cat-security">${v.id}</span><span>CVSS ${v.score}</span></div>
+                <div class="c-title">${v.product}</div><div class="c-summary">${v.desc}</div>
+                <div class="c-foot"><span class="c-source">${v.status}</span><span style="color:${sc};">${v.sev}</span></div>
+            </div>`;
+        }).join('') : '<div style="padding:40px;text-align:center;color:var(--text-3);">No vulnerabilities found</div>');
+    }
+
+    function renderCompanies() {
+        const div = document.getElementById('companies-view');
+        div.innerHTML = `<div class="feed-label">Company Risk Profiles</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1px;background:var(--border);">` +
+            (state.companies||[]).map(c => `<div class="card"><div class="c-top"><span class="c-cat cat-market">${c.ticker}</span><span>${c.sector}</span></div>
+            <div class="c-title">${c.name}</div><div class="c-summary">Risk: ${c.risk}/100 | Incidents: ${c.incidents}</div>
+            <div class="c-foot"><span class="c-source">${c.status}</span></div></div>`).join('') + '</div>';
+    }
+
+    function renderBriefing() {
+        const div = document.getElementById('briefing-view');
+        const brief = state.briefings?.[0];
+        div.innerHTML = `<div class="feed-label">AI Executive Briefing</div>` +
+            (brief ? `<div class="card" style="padding:28px;"><div class="c-top"><span class="c-cat cat-ai">AI ANALYSIS</span><span class="c-time">${new Date(brief.timestamp).toLocaleString()}</span></div>
+            <div class="c-title" style="font-size:1.8rem;">${brief.title}</div>
+            <div class="c-summary" style="font-size:1.1rem;line-height:1.8;-webkit-line-clamp:unset;">${brief.content}</div>
+            </div>` : '<div style="padding:40px;text-align:center;color:var(--text-3);">No briefing available</div>');
+    }
+
+    function renderLiveTV() {
+        const div = document.getElementById('live-tv-view');
+        const c = LIVE_TV[currentContinent] || LIVE_TV['americas'];
+        let html = `<div class="tv-hero"><div class="tv-hero-title">📡 LIVE TV · ${c.label}</div><span style="color:var(--red);font-family:var(--font-mono);font-size:0.8rem;">● LIVE</span></div>
+        <div class="tv-continent-tabs">`;
+        Object.keys(LIVE_TV).forEach(k => {
+            html += `<button class="ctab${k===currentContinent?' on':''}" data-c="${k}">${LIVE_TV[k].label} (${LIVE_TV[k].channels.length})</button>`;
+        });
+        html += `</div><div class="tv-grid">`;
+        c.channels.forEach(ch => {
+            html += `<div class="tv-channel-card"><div class="tv-channel-header"><span class="tv-channel-name"><span class="tv-live-dot"></span>${ch.name}</span><span style="color:var(--text-3);font-size:0.65rem;">${ch.country}</span></div>
+            <div class="tv-iframe-wrapper"><iframe src="https://www.youtube.com/embed/live_stream?channel=${ch.ytChannelId}" allowfullscreen loading="lazy"></iframe></div>
+            <div style="padding:8px 16px;font-size:0.65rem;color:var(--text-3);">${ch.desc}</div></div>`;
+        });
+        html += '</div>';
+        div.innerHTML = html;
+        document.querySelectorAll('.ctab').forEach(btn => btn.addEventListener('click', function(){
+            currentContinent = this.dataset.c;
+            renderLiveTV();
+        }));
+    }
+
+    // TradingView widget helper (loads the official script)
+    function initTVWidget(containerId, scriptSrc, config) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        const script = document.createElement('script');
+        script.src = scriptSrc;
+        script.async = true;
+        script.innerHTML = JSON.stringify(config);
+        container.appendChild(script);
+    }
+
+    // Tab switching
+    document.querySelectorAll('#tabs .tab').forEach(btn => btn.addEventListener('click', function(){
+        document.querySelectorAll('#tabs .tab').forEach(b => b.classList.remove('on'));
+        this.classList.add('on');
+        currentView = this.dataset.view;
+        renderCurrentView();
+    }));
+
+    // Countdown timer
+    setInterval(() => {
+        if (refreshCountdown > 0) refreshCountdown--;
+        document.getElementById('countdown').textContent = `${Math.floor(refreshCountdown/60)}:${(refreshCountdown%60).toString().padStart(2,'0')}`;
+    }, 1000);
 </script>
 </body>
 </html>
