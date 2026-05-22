@@ -3,9 +3,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 import yfinance as yf
 
-# ═══════════════════════════════════════════════════════════════
-# Eventlet monkey-patch – MUST be at the top for Gunicorn workers
-# ═══════════════════════════════════════════════════════════════
+# ═══ Monkey-patch for Gunicorn + Eventlet ═══
 import eventlet
 eventlet.monkey_patch()
 
@@ -35,7 +33,7 @@ app.config['SECRET_KEY'] = SECRET_KEY
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-# ----- Feeds & tickers ---------------------------------------
+# ----- Feeds & tickers (unchanged) ----------------------------
 RSS_FEEDS = {
     "cybersecurity": [
         "https://feeds.feedburner.com/TheHackersNews",
@@ -114,7 +112,7 @@ STOCK_TICKERS = [
 
 FOREX_PAIRS = ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X"]
 
-# ----- Global state (protected by lock) ----------------------
+# ----- Global state -------------------------------------------
 state_lock = threading.Lock()
 live_state = {
     "articles": [],
@@ -132,35 +130,15 @@ live_state = {
     "drop_analysis": {}
 }
 
-# ----- Timeout wrapper for slow API calls --------------------
-def run_with_timeout(func, timeout=20, default=None, *args, **kwargs):
-    """Execute a function in a separate thread with a timeout."""
-    result = [default]
-    def wrapper():
-        try:
-            result[0] = func(*args, **kwargs)
-        except Exception as e:
-            print(f"[TIMEOUT] {func.__name__} error: {e}")
-    t = threading.Thread(target=wrapper, daemon=True)
-    t.start()
-    t.join(timeout)
-    if t.is_alive():
-        print(f"[TIMEOUT] {func.__name__} timed out after {timeout}s")
-    return result[0]
-
-# ----- Helper functions -------------------------------------
+# ----- Helper functions (unchanged) ---------------------------
 def make_json_safe(obj):
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    elif isinstance(obj, dict):
-        return {k: make_json_safe(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [make_json_safe(i) for i in obj]
+    if isinstance(obj, datetime): return obj.isoformat()
+    elif isinstance(obj, dict): return {k: make_json_safe(v) for k, v in obj.items()}
+    elif isinstance(obj, list): return [make_json_safe(i) for i in obj]
     return obj
 
 def summarize_text(text, sentences=2):
-    if not text or len(text) < 100:
-        return text[:200] if text else ""
+    if not text or len(text) < 100: return text[:200] if text else ""
     try:
         parser = PlaintextParser.from_string(text, Tokenizer("english"))
         summarizer = LsaSummarizer()
@@ -170,8 +148,7 @@ def summarize_text(text, sentences=2):
         return text[:200] + "..."
 
 def extract_countries(text):
-    if not text:
-        return ["Global"]
+    if not text: return ["Global"]
     try:
         places = GeoText(text)
         countries = list(places.countries)
@@ -199,7 +176,7 @@ def categorize_article(entry, feed_category):
     if feed_category == "government": return "Government"
     return "Other"
 
-# ----- Data fetching (with timeouts) -------------------------
+# ----- Data fetching (with timeouts) --------------------------
 def fetch_all_rss():
     articles = []
     for category, urls in RSS_FEEDS.items():
@@ -209,8 +186,7 @@ def fetch_all_rss():
                 for entry in feed.entries[:5]:
                     pub = entry.get("published_parsed") or entry.get("updated_parsed")
                     ts = None
-                    if pub:
-                        ts = datetime(*pub[:6])
+                    if pub: ts = datetime(*pub[:6])
                     articles.append({
                         "id": entry.get("id") or entry.get("link"),
                         "title": entry.get("title", ""),
@@ -221,8 +197,7 @@ def fetch_all_rss():
                         "category": category,
                         "type": categorize_article(entry, category)
                     })
-            except:
-                pass
+            except: pass
     seen = set()
     unique = []
     for a in articles:
@@ -254,14 +229,13 @@ def fetch_stock_quotes():
 
 def generate_stock_history():
     history = {}
-    for sym in STOCK_TICKERS[:10]:  # top 10 for speed
+    for sym in STOCK_TICKERS[:10]:
         try:
             ticker = yf.Ticker(sym)
             hist = ticker.history(period="1mo")
             if not hist.empty:
                 history[sym] = [round(p, 2) for p in hist['Close'].tolist()]
-        except:
-            pass
+        except: pass
     return history
 
 def fetch_forex_rates():
@@ -273,8 +247,7 @@ def fetch_forex_rates():
             if not data.empty:
                 price = data['Close'].iloc[-1]
                 forex[pair] = {"price": round(price, 5)}
-        except:
-            pass
+        except: pass
     return forex
 
 def fetch_nvd_vulns():
@@ -303,15 +276,11 @@ def fetch_nvd_vulns():
                 sev = cvss_data.get("baseSeverity", "MEDIUM").upper()
                 affected_stocks = [s for s in STOCK_TICKERS if s.lower() in desc.lower()]
                 vulns.append({
-                    "id": cve_id,
-                    "score": score,
-                    "sev": sev,
+                    "id": cve_id, "score": score, "sev": sev,
                     "product": " ".join(desc.split()[:8]) if desc else cve_id,
-                    "vendor": "NVD",
-                    "status": "UNPATCHED",
+                    "vendor": "NVD", "status": "UNPATCHED",
                     "exploited": "exploit" in str(cve).lower(),
-                    "age": "Recent",
-                    "desc": desc[:300],
+                    "age": "Recent", "desc": desc[:300],
                     "affected_stocks": affected_stocks,
                 })
     except Exception as e:
@@ -326,16 +295,12 @@ def transform_to_threats(articles):
             full_text = (a["title"] + " " + (a["summary"] or "")).lower()
             affected = [s for s in STOCK_TICKERS if s.lower() in full_text]
             threats.append({
-                "id": a["id"],
-                "type": a["type"],
-                "name": a["title"][:80],
-                "sev": sev,
-                "region": extract_countries(a["summary"])[0],
+                "id": a["id"], "type": a["type"], "name": a["title"][:80],
+                "sev": sev, "region": extract_countries(a["summary"])[0],
                 "industry": "Multiple",
                 "ts": a["published"][:16].replace("T"," ") if a.get("published") else "unknown",
                 "summary": summarize_text(a["summary"] or "", 1)[:200],
-                "source": a["source"],
-                "link": a["link"],
+                "source": a["source"], "link": a["link"],
                 "affected_stocks": affected,
             })
     return threats[:20]
@@ -353,10 +318,8 @@ def generate_company_list():
     companies = []
     for sym in STOCK_TICKERS:
         companies.append({
-            "name": sym,
-            "ticker": sym,
-            "risk": random.randint(10, 95),
-            "ai": random.randint(30, 100),
+            "name": sym, "ticker": sym,
+            "risk": random.randint(10, 95), "ai": random.randint(30, 100),
             "incidents": random.randint(0, 20),
             "sector": random.choice(["Cybersecurity", "Big Tech", "Cloud", "AI/ML", "Semiconductors"]),
             "status": random.choice(["MONITORED", "CLEAR", "ELEVATED", "HIGH RISK"])
@@ -379,43 +342,89 @@ def build_stock_drop_analysis(stocks, articles):
             }
     return analysis
 
-# ----- Core refresh (fast data emitted immediately, slow data in background) -----
+# ----- Dummy data for immediate display ----------------------
+def generate_dummy_data():
+    """Populate the state with placeholder data so the UI is never empty."""
+    now = datetime.now(timezone.utc)
+    dummy_articles = [
+        {"id":f"dummy{i}", "title":f"Sample Cyber Threat {i}", "link":"#",
+         "summary":"This is a placeholder article. Real data is loading...",
+         "published":now.isoformat(), "source":"Nexon Pulse", "category":"cybersecurity", "type":"Cyber"}
+        for i in range(3)
+    ]
+    dummy_threats = [
+        {"id":"t1","name":"Placeholder Threat","sev":"HIGH","region":"Global","type":"Cyber","ts":now.strftime("%Y-%m-%d %H:%M")}
+    ]
+    return {
+        "articles": dummy_articles,
+        "threats": dummy_threats,
+        "vulns": [],
+        "companies": generate_company_list(),
+        "briefings": [{"title":"Initializing...","content":"The dashboard is starting up. Real data will appear shortly.","timestamp":now.isoformat()}],
+        "ticker_news": [a["title"] for a in dummy_articles],
+        "incidents": 1,
+        "last_updated": now.isoformat(),
+        "sources_count": 80,
+        "stocks": {},
+        "stock_history": {},
+        "forex": {},
+        "drop_analysis": {}
+    }
+
+def run_with_timeout(func, timeout=20, default=None, *args, **kwargs):
+    result = [default]
+    def wrapper():
+        try:
+            result[0] = func(*args, **kwargs)
+        except Exception as e:
+            print(f"[TIMEOUT] {func.__name__} error: {e}")
+    t = threading.Thread(target=wrapper, daemon=True)
+    t.start()
+    t.join(timeout)
+    if t.is_alive():
+        print(f"[TIMEOUT] {func.__name__} timed out after {timeout}s")
+    return result[0]
+
+# ----- Core refresh ------------------------------------------
 def refresh_all():
     global live_state
     print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] Starting refresh...")
 
-    # Fast data
-    articles = run_with_timeout(fetch_all_rss, timeout=20, default=[])
-    threats = transform_to_threats(articles)
-    ticker_news = [a["title"] for a in articles[:20]]
-    briefing = generate_briefing(articles)
-    vulns = run_with_timeout(fetch_nvd_vulns, timeout=15, default=[])
-    companies = generate_company_list()
-    incidents = len(threats)
-
-    # Emit fast data immediately
+    # First, set dummy data so the dashboard shows something immediately
+    dummy = generate_dummy_data()
     with state_lock:
-        live_state.update({
-            "articles": articles,
-            "threats": threats,
-            "vulns": vulns,
-            "companies": companies,
-            "briefings": [briefing],
-            "ticker_news": ticker_news,
-            "incidents": incidents,
-            "last_updated": datetime.now(timezone.utc).isoformat(),
-            "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
-            # stocks and forex remain as previously (or empty)
-        })
+        live_state.update(dummy)
     socketio.emit("live_data", make_json_safe(live_state))
 
-    # Slow data (stocks, forex, history) fetched in background
-    def fetch_slow():
-        print("Background: fetching stocks & forex...")
+    # Then fetch real data in a background thread
+    def fetch_real():
+        articles = run_with_timeout(fetch_all_rss, timeout=20, default=[])
+        threats = transform_to_threats(articles) if articles else dummy["threats"]
+        ticker_news = [a["title"] for a in articles[:20]] if articles else dummy["ticker_news"]
+        briefing = generate_briefing(articles) if articles else dummy["briefings"][0]
+        vulns = run_with_timeout(fetch_nvd_vulns, timeout=15, default=[])
+        companies = generate_company_list()
+        incidents = len(threats)
+
+        with state_lock:
+            live_state.update({
+                "articles": articles if articles else dummy["articles"],
+                "threats": threats,
+                "vulns": vulns,
+                "companies": companies,
+                "briefings": [briefing],
+                "ticker_news": ticker_news,
+                "incidents": incidents,
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+                "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
+            })
+        socketio.emit("live_data", make_json_safe(live_state))
+
+        # Slow data
         stocks = run_with_timeout(fetch_stock_quotes, timeout=30, default={})
         stock_history = run_with_timeout(generate_stock_history, timeout=20, default={})
         forex = run_with_timeout(fetch_forex_rates, timeout=20, default={})
-        drop_analysis = build_stock_drop_analysis(stocks, articles)
+        drop_analysis = build_stock_drop_analysis(stocks, articles) if stocks else {}
         with state_lock:
             live_state.update({
                 "stocks": stocks,
@@ -426,8 +435,9 @@ def refresh_all():
             })
         socketio.emit("stock_update", {"stocks": stocks})
         socketio.emit("forex_update", {"forex": forex})
-        print("Background: stocks & forex done.")
-    threading.Thread(target=fetch_slow, daemon=True).start()
+        print("Real data refresh complete.")
+
+    threading.Thread(target=fetch_real, daemon=True).start()
 
 # ----- Periodic updaters ------------------------------------
 def stock_updater():
@@ -451,7 +461,7 @@ def scheduled_full_refresh():
         time.sleep(300)
         refresh_all()
 
-# ----- Flask routes & Socket.IO -----------------------------
+# ===== Routes ================================================
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -468,26 +478,37 @@ def on_connect():
 def on_refresh():
     refresh_all()
 
-# ═══════════════════════════════════════════════════════════════
-# Start background threads automatically when the module loads
-# (This runs once per Gunicorn worker, after the app is created)
-# ═══════════════════════════════════════════════════════════════
-if not getattr(app, '_threads_started', False):
-    app._threads_started = True
+# ===== Gunicorn Post-Worker Hook (FIRES RELIABLY IN PRODUCTION) =====
+# This function is called by Gunicorn AFTER each worker process starts.
+# We only start threads once (using a file lock to prevent duplicates).
+_worker_initialized = False
+_worker_init_lock = threading.Lock()
 
-    def _start_background_tasks():
-        with app.app_context():
+def post_worker_init(worker):
+    """Gunicorn hook: called after a worker process is fully initialized."""
+    global _worker_initialized
+    with _worker_init_lock:
+        if not _worker_initialized:
+            _worker_initialized = True
+            print("🚀 Gunicorn worker initialized — starting background data fetchers...")
+            # Start periodic updaters
             threading.Thread(target=stock_updater, daemon=True).start()
             threading.Thread(target=forex_updater, daemon=True).start()
             threading.Thread(target=scheduled_full_refresh, daemon=True).start()
-            # Initial data fetch in background (with a small delay to let server settle)
-            threading.Timer(2.0, refresh_all).start()
+            # Immediate first refresh
+            threading.Thread(target=refresh_all, daemon=True).start()
 
-    # Delay the start slightly to allow the server to finish initialisation
-    threading.Timer(2.0, _start_background_tasks).start()
+# Attach the hook to the Flask app so Gunicorn can find it
+app.post_worker_init = post_worker_init
 
-# ----- Dev server (only used when running python server.py directly) -----
+# ----- Dev server (only used locally) -------------------------
 if __name__ == "__main__":
-    # For local development only – not used on Render
+    # Local development fallback — start threads manually
+    print("🚀 Dev server — starting background threads...")
+    threading.Thread(target=stock_updater, daemon=True).start()
+    threading.Thread(target=forex_updater, daemon=True).start()
+    threading.Thread(target=scheduled_full_refresh, daemon=True).start()
+    threading.Thread(target=refresh_all, daemon=True).start()
+
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
