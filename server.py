@@ -1,5 +1,5 @@
 import os, json, random, time, threading, feedparser, re, copy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import requests
 import yfinance as yf
 from sumy.parsers.plaintext import PlaintextParser
@@ -30,20 +30,35 @@ RSS_FEEDS = {
         "https://threatpost.com/feed/",
         "https://www.securityweek.com/rss.xml",
         "https://www.cyberscoop.com/feed/",
+        "https://www.infosecurity-magazine.com/feed/",
+        "https://www.csoonline.com/feed/",
+        "https://www.scmagazine.com/feed/",
+        "https://www.helpnetsecurity.com/feed/",
+        "https://www.tripwire.com/state-of-security/feed",
+        "https://www.schneier.com/blog/atom.xml",
+        "https://www.recordedfuture.com/feed",
+        "https://www.digitalshadows.com/blog/feed",
+        "https://www.fireeye.com/blog/feed",
     ],
     "technology": [
         "https://www.cnbc.com/id/19854910/device/rss/rss.html",
         "https://www.theverge.com/rss/index.xml",
         "https://www.techcrunch.com/feed/",
+        "https://www.engadget.com/rss.xml",
         "https://www.wired.com/feed/category/business/latest/rss",
         "https://arstechnica.com/feed/",
+        "https://www.technologyreview.com/feed/",
         "https://www.cnet.com/rss/news/",
         "https://www.bbc.com/news/technology/rss.xml",
+        "https://www.reuters.com/technology/rss",
+        "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/section/technology/rss.xml",
     ],
     "business_finance": [
         "https://www.cnbc.com/id/10001147/device/rss/rss.html",
         "https://www.reuters.com/business/rss",
         "https://www.marketwatch.com/rss/topstories",
+        "https://www.ft.com/?format=rss",
+        "https://www.economist.com/feeds/print-sections/77/business.xml",
         "https://www.forbes.com/business/feed/",
     ],
     "bloomberg": [
@@ -51,13 +66,23 @@ RSS_FEEDS = {
     ],
     "government": [
         "https://www.cisa.gov/cybersecurity-advisories/rss.xml",
+        "https://www.nsa.gov/Press-Room/News-Highlights/Feed/",
         "https://www.fbi.gov/feeds/news/rss.xml",
         "https://www.whitehouse.gov/feed/",
+        "https://www.state.gov/feed/",
     ],
     "vulnerability": [
         "https://nvd.nist.gov/feeds/xml/cve/misc/nvd-rss.xml",
         "https://www.exploit-db.com/rss.xml",
+        "https://cve.mitre.org/cve/data/updates/rss.xml",
     ],
+    "ai_ml": [
+        "https://www.artificialintelligence-news.com/feed/",
+        "https://www.aitrends.com/feed/",
+        "https://machinelearningmastery.com/feed/",
+        "https://www.deeplearning.ai/the-batch/feed/",
+        "https://www.technologyreview.com/topic/artificial-intelligence/feed/",
+    ]
 }
 
 # ─── STOCK TICKERS ──────────────────────────────────────────────────
@@ -159,11 +184,10 @@ def fetch_all_rss():
             seen.add(a["id"])
             unique.append(a)
     unique.sort(key=lambda x: x["published"] or "", reverse=True)
-    return unique[:100]
+    return unique[:120]
 
 def fetch_stock_quotes():
     quotes = {}
-    # Batch fetch in groups of 10 to avoid rate limits
     batch_size = 10
     all_tickers = [s for s in STOCK_TICKERS]
     for i in range(0, len(all_tickers), batch_size):
@@ -192,7 +216,7 @@ def fetch_stock_quotes():
                     }
                 except:
                     quotes[sym] = {"price": None, "change": None, "name": sym}
-        except Exception as e:
+        except:
             for sym in batch:
                 quotes[sym] = {"price": None, "change": None, "name": sym}
     return quotes
@@ -229,7 +253,7 @@ def fetch_forex_rates():
 def fetch_nvd_vulns():
     vulns = []
     try:
-        end = datetime.utcnow()
+        end = datetime.now(timezone.utc)
         start = end - timedelta(days=7)
         url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
         params = {
@@ -251,7 +275,6 @@ def fetch_nvd_vulns():
                 cvss_data = cvss_v31.get("cvssData", {}) or cvss_v30.get("cvssData", {})
                 score = cvss_data.get("baseScore", 0)
                 sev = cvss_data.get("baseSeverity", "MEDIUM").upper()
-                # Check if any tracked stock is mentioned
                 affected_stocks = [s for s in STOCK_TICKERS if s.lower() in desc.lower()]
                 vulns.append({
                     "id": cve_id,
@@ -276,7 +299,7 @@ def generate_briefing(articles):
     return {
         "title": "Daily Intelligence Briefing",
         "content": combined,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 def transform_to_threats(articles):
@@ -284,7 +307,6 @@ def transform_to_threats(articles):
     for a in articles:
         if a["category"] in ["cybersecurity", "vulnerability", "government"]:
             sev = "CRITICAL" if a["type"] in ["Ransomware","Zero-Day","APT","Breach"] else "HIGH"
-            # Find affected stocks
             full_text = (a["title"] + " " + (a["summary"] or "")).lower()
             affected = [s for s in STOCK_TICKERS if s.lower() in full_text]
             threats.append({
@@ -323,14 +345,13 @@ def build_stock_drop_analysis(stocks, articles):
     analysis = {}
     for sym, data in stocks.items():
         if data.get("change") is not None and data["change"] < 0:
-            # Find articles mentioning this stock
             related = []
             for a in articles:
                 text = (a.get("title","") + " " + a.get("summary","")).lower()
                 if sym.lower() in text:
                     related.append(a["title"][:100])
             analysis[sym] = {
-                "drop_pct": round(data["change_pct"], 2) if data.get("change_pct") else round(data["change"], 2),
+                "drop_pct": round(data.get("change_pct", data["change"]), 2),
                 "related_news": related[:3],
                 "risk_level": "HIGH" if abs(data.get("change", 0)) > 3 else "MEDIUM" if abs(data.get("change", 0)) > 1 else "LOW"
             }
@@ -339,34 +360,40 @@ def build_stock_drop_analysis(stocks, articles):
 def refresh_all():
     global live_state
     with state_lock:
-        print(f"[{datetime.utcnow().strftime('%H:%M:%S')}] Refreshing data...")
-        articles = fetch_all_rss()
-        stocks = fetch_stock_quotes()
-        stock_history = generate_stock_history()
-        threats = transform_to_threats(articles)
-        briefing = generate_briefing(articles)
-        ticker_news = [a["title"] for a in articles[:20]]
-        vulns = fetch_nvd_vulns()
-        companies = generate_company_list()
-        forex = fetch_forex_rates()
-        drop_analysis = build_stock_drop_analysis(stocks, articles)
+        print(f"[{datetime.now(timezone.utc).strftime('%H:%M:%S')}] Refreshing data...")
+        try:
+            articles = fetch_all_rss()
+            stocks = fetch_stock_quotes()
+            stock_history = generate_stock_history()
+            threats = transform_to_threats(articles)
+            briefing = generate_briefing(articles)
+            ticker_news = [a["title"] for a in articles[:20]]
+            vulns = fetch_nvd_vulns()
+            companies = generate_company_list()
+            forex = fetch_forex_rates()
+            drop_analysis = build_stock_drop_analysis(stocks, articles)
 
-        new_state = {
-            "articles": articles,
-            "stocks": stocks,
-            "stock_history": stock_history,
-            "threats": threats,
-            "vulns": vulns,
-            "companies": companies,
-            "briefings": [briefing],
-            "ticker_news": ticker_news,
-            "incidents": len(threats),
-            "last_updated": datetime.utcnow().isoformat(),
-            "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
-            "forex": forex,
-            "drop_analysis": drop_analysis,
-        }
-        live_state = make_json_safe(new_state)
+            new_state = {
+                "articles": articles,
+                "stocks": stocks,
+                "stock_history": stock_history,
+                "threats": threats,
+                "vulns": vulns,
+                "companies": companies,
+                "briefings": [briefing],
+                "ticker_news": ticker_news,
+                "incidents": len(threats),
+                "last_updated": datetime.now(timezone.utc).isoformat(),
+                "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
+                "forex": forex,
+                "drop_analysis": drop_analysis,
+            }
+            live_state = make_json_safe(new_state)
+        except Exception as e:
+            print(f"Refresh error: {e}")
+            # Keep old state on error
+            if not live_state:
+                live_state = {"articles": [], "stocks": {}, "stock_history": {}, "threats": [], "vulns": [], "companies": [], "briefings": [], "ticker_news": [], "incidents": 0, "last_updated": datetime.now(timezone.utc).isoformat(), "sources_count": 80, "forex": {}, "drop_analysis": {}}
     socketio.emit("live_data", live_state)
 
 def stock_updater():
@@ -409,6 +436,12 @@ def on_refresh(auth=None):
     refresh_all()
 
 if __name__ == "__main__":
+    import nltk
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt', quiet=True)
+    
     print("NEXON PULSE SERVER – launching on port 5000")
     refresh_all()
     threading.Thread(target=stock_updater, daemon=True).start()
@@ -416,6 +449,12 @@ if __name__ == "__main__":
     def scheduled():
         while True:
             time.sleep(300)
-            refresh_all()
+            try:
+                refresh_all()
+            except:
+                pass
     threading.Thread(target=scheduled, daemon=True).start()
-    socketio.run(app, host="0.0.0.0", port=5000, debug=False, allow_unsafe_werkzeug=True)
+    
+    # Get port from environment or default to 5000
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
