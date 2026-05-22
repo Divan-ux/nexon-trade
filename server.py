@@ -2,11 +2,18 @@ import os, json, time, threading, feedparser, re, random
 from datetime import datetime, timedelta, timezone
 import requests
 import yfinance as yf
+
+# ═══════════════════════════════════════════════════════════════
+# Eventlet monkey-patch – MUST be at the top for Gunicorn workers
+# ═══════════════════════════════════════════════════════════════
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, jsonify, send_from_directory
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
-# ----- NLTK data setup (punk tokenizer) -----
+# ----- NLTK setup (tokenizer) ---------------------------------
 import nltk
 nltk_data_dir = os.path.join(os.getcwd(), 'nltk_data')
 os.makedirs(nltk_data_dir, exist_ok=True)
@@ -21,13 +28,14 @@ from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
 from geotext import GeoText
 
-# ----- Config -----
+# ----- App config --------------------------------------------
 SECRET_KEY = os.environ.get("SECRET_KEY", "nexon-pulse-prod-secret")
 app = Flask(__name__, static_folder='.', template_folder='.')
 app.config['SECRET_KEY'] = SECRET_KEY
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
+# ----- Feeds & tickers ---------------------------------------
 RSS_FEEDS = {
     "cybersecurity": [
         "https://feeds.feedburner.com/TheHackersNews",
@@ -106,6 +114,7 @@ STOCK_TICKERS = [
 
 FOREX_PAIRS = ["EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X"]
 
+# ----- Global state (protected by lock) ----------------------
 state_lock = threading.Lock()
 live_state = {
     "articles": [],
@@ -123,22 +132,23 @@ live_state = {
     "drop_analysis": {}
 }
 
-# ----- Timeout wrapper for slow API calls -----
+# ----- Timeout wrapper for slow API calls --------------------
 def run_with_timeout(func, timeout=20, default=None, *args, **kwargs):
+    """Execute a function in a separate thread with a timeout."""
     result = [default]
     def wrapper():
         try:
             result[0] = func(*args, **kwargs)
         except Exception as e:
             print(f"[TIMEOUT] {func.__name__} error: {e}")
-    thread = threading.Thread(target=wrapper, daemon=True)
-    thread.start()
-    thread.join(timeout)
-    if thread.is_alive():
+    t = threading.Thread(target=wrapper, daemon=True)
+    t.start()
+    t.join(timeout)
+    if t.is_alive():
         print(f"[TIMEOUT] {func.__name__} timed out after {timeout}s")
     return result[0]
 
-# ----- Helper functions -----
+# ----- Helper functions -------------------------------------
 def make_json_safe(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
@@ -189,7 +199,7 @@ def categorize_article(entry, feed_category):
     if feed_category == "government": return "Government"
     return "Other"
 
-# ----- Data fetching (with timeouts) -----
+# ----- Data fetching (with timeouts) -------------------------
 def fetch_all_rss():
     articles = []
     for category, urls in RSS_FEEDS.items():
@@ -383,7 +393,7 @@ def refresh_all():
     companies = generate_company_list()
     incidents = len(threats)
 
-    # Update state with fast data and emit
+    # Emit fast data immediately
     with state_lock:
         live_state.update({
             "articles": articles,
@@ -395,11 +405,11 @@ def refresh_all():
             "incidents": incidents,
             "last_updated": datetime.now(timezone.utc).isoformat(),
             "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
-            # stocks and forex remain from previous update (or empty)
+            # stocks and forex remain as previously (or empty)
         })
     socketio.emit("live_data", make_json_safe(live_state))
 
-    # Slow data (stocks, forex) fetched in background
+    # Slow data (stocks, forex, history) fetched in background
     def fetch_slow():
         print("Background: fetching stocks & forex...")
         stocks = run_with_timeout(fetch_stock_quotes, timeout=30, default={})
@@ -419,7 +429,7 @@ def refresh_all():
         print("Background: stocks & forex done.")
     threading.Thread(target=fetch_slow, daemon=True).start()
 
-# ----- Periodic updaters -----
+# ----- Periodic updaters ------------------------------------
 def stock_updater():
     while True:
         time.sleep(60)
@@ -441,7 +451,7 @@ def scheduled_full_refresh():
         time.sleep(300)
         refresh_all()
 
-# ----- Flask routes & Socket.IO -----
+# ----- Flask routes & Socket.IO -----------------------------
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -458,13 +468,26 @@ def on_connect():
 def on_refresh():
     refresh_all()
 
-# ----- Main -----
-if __name__ == "__main__":
-    threading.Thread(target=stock_updater, daemon=True).start()
-    threading.Thread(target=forex_updater, daemon=True).start()
-    threading.Thread(target=scheduled_full_refresh, daemon=True).start()
-    # Initial data fetch in background
-    threading.Thread(target=refresh_all, daemon=True).start()
+# ═══════════════════════════════════════════════════════════════
+# Start background threads automatically when the module loads
+# (This runs once per Gunicorn worker, after the app is created)
+# ═══════════════════════════════════════════════════════════════
+if not getattr(app, '_threads_started', False):
+    app._threads_started = True
 
+    def _start_background_tasks():
+        with app.app_context():
+            threading.Thread(target=stock_updater, daemon=True).start()
+            threading.Thread(target=forex_updater, daemon=True).start()
+            threading.Thread(target=scheduled_full_refresh, daemon=True).start()
+            # Initial data fetch in background (with a small delay to let server settle)
+            threading.Timer(2.0, refresh_all).start()
+
+    # Delay the start slightly to allow the server to finish initialisation
+    threading.Timer(2.0, _start_background_tasks).start()
+
+# ----- Dev server (only used when running python server.py directly) -----
+if __name__ == "__main__":
+    # For local development only – not used on Render
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
