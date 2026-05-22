@@ -1,4 +1,4 @@
-import os, json, random, time, threading, feedparser, re, copy
+import os, json, random, time, threading, feedparser, re
 from datetime import datetime, timedelta, timezone
 import requests
 import yfinance as yf
@@ -85,7 +85,6 @@ RSS_FEEDS = {
     ]
 }
 
-# ─── STOCK TICKERS ──────────────────────────────────────────────────
 STOCK_TICKERS = [
     "MSFT", "GOOGL", "AMZN", "AAPL", "META", "NVDA", "TSLA",
     "CRWD", "PANW", "S", "FTNT", "OKTA", "ZS", "NET", "CHKP", "TENB", "VRNS",
@@ -95,12 +94,10 @@ STOCK_TICKERS = [
     "INTC", "AMD", "CSCO", "IBM",
 ]
 
-# ─── FOREX PAIRS ────────────────────────────────────────────────────
 FOREX_PAIRS = [
     "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X",
 ]
 
-# ─── GLOBAL STATE ───────────────────────────────────────────────────
 state_lock = threading.Lock()
 live_state = {}
 
@@ -341,7 +338,6 @@ def generate_company_list():
     return companies
 
 def build_stock_drop_analysis(stocks, articles):
-    """Analyze why stocks dropped based on news"""
     analysis = {}
     for sym, data in stocks.items():
         if data.get("change") is not None and data["change"] < 0:
@@ -350,8 +346,9 @@ def build_stock_drop_analysis(stocks, articles):
                 text = (a.get("title","") + " " + a.get("summary","")).lower()
                 if sym.lower() in text:
                     related.append(a["title"][:100])
+            pct = data.get("change_pct", data["change"])
             analysis[sym] = {
-                "drop_pct": round(data.get("change_pct", data["change"]), 2),
+                "drop_pct": round(pct, 2) if pct else round(data["change"], 2),
                 "related_news": related[:3],
                 "risk_level": "HIGH" if abs(data.get("change", 0)) > 3 else "MEDIUM" if abs(data.get("change", 0)) > 1 else "LOW"
             }
@@ -391,9 +388,14 @@ def refresh_all():
             live_state = make_json_safe(new_state)
         except Exception as e:
             print(f"Refresh error: {e}")
-            # Keep old state on error
             if not live_state:
-                live_state = {"articles": [], "stocks": {}, "stock_history": {}, "threats": [], "vulns": [], "companies": [], "briefings": [], "ticker_news": [], "incidents": 0, "last_updated": datetime.now(timezone.utc).isoformat(), "sources_count": 80, "forex": {}, "drop_analysis": {}}
+                live_state = {
+                    "articles": [], "stocks": {}, "stock_history": {},
+                    "threats": [], "vulns": [], "companies": [], "briefings": [],
+                    "ticker_news": [], "incidents": 0,
+                    "last_updated": datetime.now(timezone.utc).isoformat(),
+                    "sources_count": 80, "forex": {}, "drop_analysis": {}
+                }
     socketio.emit("live_data", live_state)
 
 def stock_updater():
@@ -418,7 +420,6 @@ def forex_updater():
         except:
             pass
 
-# ─── ROUTES ────────────────────────────────────────────────────────
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -441,9 +442,9 @@ if __name__ == "__main__":
         nltk.data.find('tokenizers/punkt')
     except LookupError:
         nltk.download('punkt', quiet=True)
-    
-    print("NEXON PULSE SERVER – launching on port 5000")
-    refresh_all()
+
+    print("NEXON PULSE SERVER – launching...")
+    # Start background threads FIRST
     threading.Thread(target=stock_updater, daemon=True).start()
     threading.Thread(target=forex_updater, daemon=True).start()
     def scheduled():
@@ -454,7 +455,8 @@ if __name__ == "__main__":
             except:
                 pass
     threading.Thread(target=scheduled, daemon=True).start()
-    
-    # Get port from environment or default to 5000
+    # Initial data fetch
+    threading.Thread(target=refresh_all, daemon=True).start()
+
     port = int(os.environ.get("PORT", 5000))
     socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
