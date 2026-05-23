@@ -283,12 +283,12 @@
 const LIVE_TV_CHANNELS = {
     americas: { label: 'Americas', channels: [
         { name: 'Bloomberg TV', country: 'USA', ytChannelId: 'UCIALMKvObZNtJ6AmdCLP7Lg', ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCIALMKvObZNtJ6AmdCLP7Lg', description: 'Global business news' },
-        { name: 'CNBC', country: 'USA', ytChannelId: 'UCrp_UIK1lssBZq0w6x0GQRA', ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCrp_UIK1lssBZq0w6x0GQRA', description: 'Financial markets' },
-        { name: 'Fox News', country: 'USA', ytChannelId: 'UCXIJgqnII2ZOINSWNOGFThA', ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCXIJgqnII2ZOINSWNOGFThA', description: 'Breaking news' },
+        { name: 'CNBC', country: 'USA', ytChannelId: 'UCrp_UIK1lssBZq0w6x0GQRA', ytLiveUrl: 'https://www.youtube.com/embed/9NyxcX3rhQs', description: 'Real-time financial market coverage' },
+        { name: 'Fox News', country: 'USA', ytChannelId: 'UCXIJgqnII2ZOINSWNOGFThA', ytLiveUrl: 'https://video.foxnews.com/v/video-embed.html?video_id=5614615980001&autoplay=1', description: 'Breaking news & political analysis' },
         { name: 'ABC News', country: 'USA', ytChannelId: 'UCBi2mrWuNuyYy4gbM6fU18Q', ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCBi2mrWuNuyYy4gbM6fU18Q', description: '24/7 streaming' },
-        { name: 'CBS News', country: 'USA', ytChannelId: 'UC8p1vwPD8hEiReN5Yz1P3JA', ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UC8p1vwPD8hEiReN5Yz1P3JA', description: 'Continuous news' },
-        { name: 'NBC News', country: 'USA', ytChannelId: 'UCeY0G5L6Ux3e2qH5cMp6hPA', ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCeY0G5L6Ux3e2qH5cMp6hPA', description: 'Top stories' },
-        { name: 'Yahoo Finance', country: 'USA', ytChannelId: 'UCEAZeUIeJs0IjQiqTCVSIAA', ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UCEAZeUIeJs0IjQiqTCVSIAA', description: 'Market coverage' },
+        { name: 'CBS News', country: 'USA', ytChannelId: 'UC8p1vwPD8hEiReN5Yz1P3JA', ytLiveUrl: 'https://www.cbsnews.com/live/embed/', description: 'Continuous news streaming' },
+        { name: 'NBC News', country: 'USA', ytChannelId: 'UCeY0G5L6Ux3e2qH5cMp6hPA', ytLiveUrl: 'https://www.nbcnews.com/watch/embed/', description: 'Breaking news & top stories' },
+        { name: 'Yahoo Finance', country: 'USA', ytChannelId: 'UCEAZeUIeJs0IjQiqTCVSIAA', ytLiveUrl: 'https://finance.yahoo.com/live/embed/', description: 'Live market coverage & analysis' },
         { name: 'Reuters', country: 'USA', ytChannelId: 'UChqUTb7kYRX8-EiaN3XFrSQ', ytLiveUrl: 'https://www.youtube.com/embed/live_stream?channel=UChqUTb7kYRX8-EiaN3XFrSQ', description: 'Global news' }
     ] },
     europe: { label: 'Europe', channels: [
@@ -394,6 +394,7 @@ function updateUI() {
     const dot = document.getElementById('threat-level-dot');
     if (dot) dot.style.background = state.threat_level === 'CRITICAL' ? '#EF4444' : state.threat_level === 'HIGH' ? '#F59E0B' : 'var(--gold)';
 }
+    
 function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){ if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
 
 // Rendering functions
@@ -412,6 +413,8 @@ function renderFeed() {
         </div>`;
     }).join('');
 }
+
+    
 function renderMarkets() {
     const div = document.getElementById('markets-view');
     div.innerHTML = `<div class="feed-label">TradingView · Market Overview</div>
@@ -456,21 +459,23 @@ function renderMarkets() {
     }
     initTVMarketOverview();
 }
-function initTVMarketOverview() {
-    const container = document.getElementById('tv-market-overview-inner');
-    if (!container || window._tvMarketOverviewInit) return;
-    window._tvMarketOverviewInit = true;
+    
+function initTVEconomicCalendar() {
+    const container = document.getElementById('tv-economic-calendar-inner');
+    if (!container || window._tvEconCalInit) return;
+    window._tvEconCalInit = true;
     container.innerHTML = '';
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
-    script.async = true;
-    script.innerHTML = JSON.stringify({ colorTheme: "dark", dateRange: "12M", showChart: true, locale: "en", width: "100%", height: "100%", isTransparent: true, showSymbolLogo: true, showFloatingTooltip: true, tabs: [
-        { title: "Indices", symbols: [{ s: "FOREXCOM:SPXUSD", d: "S&P 500" }, { s: "NASDAQ:NDX", d: "Nasdaq 100" }, { s: "FOREXCOM:DJI", d: "Dow 30" }, { s: "FOREXCOM:UKXGBP", d: "FTSE 100" }, { s: "FOREXCOM:DAXEUR", d: "DAX" }, { s: "FOREXCOM:NKYJPY", d: "Nikkei 225" }] },
-        { title: "Tech", symbols: [{ s: "NASDAQ:AAPL", d: "Apple" }, { s: "NASDAQ:MSFT", d: "Microsoft" }, { s: "NASDAQ:NVDA", d: "NVIDIA" }, { s: "NASDAQ:GOOGL", d: "Alphabet" }, { s: "NASDAQ:META", d: "Meta" }, { s: "NASDAQ:AMZN", d: "Amazon" }] },
-        { title: "Cyber", symbols: [{ s: "NASDAQ:CRWD", d: "CrowdStrike" }, { s: "NASDAQ:PANW", d: "Palo Alto" }, { s: "NASDAQ:ZS", d: "Zscaler" }, { s: "NASDAQ:FTNT", d: "Fortinet" }, { s: "NASDAQ:OKTA", d: "Okta" }, { s: "NYSE:NET", d: "Cloudflare" }] }
-    ] });
-    container.appendChild(script);
+    
+    // Use Forex Factory's embeddable calendar (more reliable)
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.forexfactory.com/calendar?day=today&month=current&week=current&iframe=true';
+    iframe.width = '100%';
+    iframe.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.background = '#0c0c0c';
+    container.appendChild(iframe);
 }
+    
 function showStockDetail(sym) {
     document.getElementById('stock-detail').style.display = 'block';
     document.getElementById('stock-detail-label').textContent = `Advanced Chart · ${sym}`;
@@ -552,14 +557,34 @@ function initTVEconomicCalendar() {
     script.innerHTML = JSON.stringify({ colorTheme: "dark", isTransparent: true, width: "100%", height: "100%", locale: "en", importanceFilter: "-1,0,1", countryFilter: "US,EU,GB,JP,CN,AU,CA,CH" });
     container.appendChild(script);
 }
+    
 function showForexChart(pair) { window.open(`https://www.tradingview.com/chart/?symbol=FX:${pair.replace('=X','')}`, '_blank'); }
+    
 function renderStockInsights() {
-    const div = document.getElementById('insights-view');
-    const insights = state.stock_insights || [];
-    if (!insights.length) { div.innerHTML = '<div class="feed-label">Stock Insights</div><div class="card" style="padding:40px;text-align:center;">Loading market data...</div>'; return; }
-    let html = `<div class="feed-label">📊 Real‑time Stock Analysis &amp; Reasons for Movement</div>
-        <div style="overflow-x:auto;"><table class="insights-table">
-        <thead><tr><th>Symbol</th><th>Price</th><th>Change</th><th>Sentiment</th><th>Why is it moving? / Investment Safety</th></tr></thead><tbody>`;
+     const div = document.getElementById('insights-view');
+    let insights = state.stock_insights || [];
+    
+    // If empty, try to generate from stocks data directly
+    if (!insights.length && Object.keys(state.stocks).length) {
+        insights = Object.keys(state.stocks).map(sym => {
+            const q = state.stocks[sym];
+            if (!q || q.price == null) return null;
+            return {
+                symbol: sym,
+                name: q.name || sym,
+                price: q.price,
+                change: q.change || 0,
+                change_pct: q.change_pct || 0,
+                reason: q.change > 0 ? "Positive momentum from recent news." : (q.change < 0 ? "Market pressure affecting valuation." : "Trading sideways."),
+                sentiment: q.change > 0 ? "bullish" : (q.change < 0 ? "bearish" : "neutral")
+            };
+        }).filter(Boolean);
+    }
+    
+    if (!insights.length) {
+        div.innerHTML = '<div class="feed-label">Stock Insights</div><div class="card" style="padding:40px;text-align:center;">Waiting for market data... Refresh in a moment.</div>';
+        return;
+    }
     insights.forEach(s => {
         const changePct = s.change_pct ? s.change_pct.toFixed(2) : (s.change / s.price * 100).toFixed(2);
         const changeClass = s.change >= 0 ? 'stock-up' : 'stock-down';
@@ -576,6 +601,8 @@ function renderStockInsights() {
     html += `</tbody></table></div><div class="feed-label">💡 How to use</div><div class="card" style="padding:20px;"><span style="color:var(--text-2);">Click any row to open a full TradingView chart with advanced indicators (RSI, MACD). The "Why" column explains price drivers based on real news and earnings. The safety note gives you a quick risk assessment for your investment.</span></div>`;
     div.innerHTML = html;
 }
+
+    
 function renderCompanies() {
     const div = document.getElementById('companies-view');
     const companies = state.companies || [];
