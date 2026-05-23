@@ -546,25 +546,29 @@ function initTVForexHeatmap() {
     script.innerHTML = JSON.stringify({ colorTheme: "dark", dateRange: "12M", locale: "en", width: "100%", height: "100%", isTransparent: true, currencies: ["EUR","USD","JPY","GBP","CHF","AUD","CAD","NZD","CNY"] });
     container.appendChild(script);
 }
+    
 function initTVEconomicCalendar() {
     const container = document.getElementById('tv-economic-calendar-inner');
     if (!container || window._tvEconCalInit) return;
     window._tvEconCalInit = true;
     container.innerHTML = '';
-    const script = document.createElement('script');
-    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-events.js';
-    script.async = true;
-    script.innerHTML = JSON.stringify({ colorTheme: "dark", isTransparent: true, width: "100%", height: "100%", locale: "en", importanceFilter: "-1,0,1", countryFilter: "US,EU,GB,JP,CN,AU,CA,CH" });
-    container.appendChild(script);
+    // Use a reliable embedded calendar from ForexFactory
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.forexfactory.com/calendar?day=today&month=current&week=current&iframe=true';
+    iframe.width = '100%';
+    iframe.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.background = '#0c0c0c';
+    container.appendChild(iframe);
 }
     
 function showForexChart(pair) { window.open(`https://www.tradingview.com/chart/?symbol=FX:${pair.replace('=X','')}`, '_blank'); }
     
 function renderStockInsights() {
-     const div = document.getElementById('insights-view');
+    const div = document.getElementById('insights-view');
     let insights = state.stock_insights || [];
     
-    // If empty, try to generate from stocks data directly
+    // Fallback: generate from stocks if empty
     if (!insights.length && Object.keys(state.stocks).length) {
         insights = Object.keys(state.stocks).map(sym => {
             const q = state.stocks[sym];
@@ -585,6 +589,11 @@ function renderStockInsights() {
         div.innerHTML = '<div class="feed-label">Stock Insights</div><div class="card" style="padding:40px;text-align:center;">Waiting for market data... Refresh in a moment.</div>';
         return;
     }
+    
+    // Build HTML correctly (was missing 'html' variable)
+    let html = `<div class="feed-label">📊 Real‑time Stock Analysis &amp; Reasons for Movement</div>
+        <div style="overflow-x:auto;"><table class="insights-table">
+        <thead><tr><th>Symbol</th><th>Price</th><th>Change</th><th>Sentiment</th><th>Why is it moving? / Investment Safety</th></tr></thead><tbody>`;
     insights.forEach(s => {
         const changePct = s.change_pct ? s.change_pct.toFixed(2) : (s.change / s.price * 100).toFixed(2);
         const changeClass = s.change >= 0 ? 'stock-up' : 'stock-down';
@@ -601,7 +610,6 @@ function renderStockInsights() {
     html += `</tbody></table></div><div class="feed-label">💡 How to use</div><div class="card" style="padding:20px;"><span style="color:var(--text-2);">Click any row to open a full TradingView chart with advanced indicators (RSI, MACD). The "Why" column explains price drivers based on real news and earnings. The safety note gives you a quick risk assessment for your investment.</span></div>`;
     div.innerHTML = html;
 }
-
     
 function renderCompanies() {
     const div = document.getElementById('companies-view');
