@@ -1,5 +1,6 @@
 # server.py
 import os, json, random, time, threading, feedparser, re, copy
+from curl_cffi import requests as curl_requests
 from datetime import datetime, timedelta
 import requests
 import yfinance as yf
@@ -208,17 +209,22 @@ def fetch_stock_quotes():
     quotes = {}
     valid_tickers = [sym for sym in STOCK_TICKERS]
     try:
-        tickers_obj = yf.Tickers(" ".join(valid_tickers))
+        # Create a session that mimics a real Chrome browser to bypass bot protection
+        session = curl_requests.Session(impersonate="chrome")
+        
         for sym in valid_tickers:
             try:
-                info = tickers_obj.tickers[sym].info
+                ticker = yf.Ticker(sym, session=session)
+                info = ticker.info
                 quotes[sym] = {
                     "price": info.get("regularMarketPrice") or info.get("currentPrice"),
                     "change": info.get("regularMarketChange"),
                     "change_pct": info.get("regularMarketChangePercent"),
-                    "name": info.get("shortName", sym)
+                    "name": info.get("shortName", sym),
+                    "volume": info.get("regularMarketVolume")  # Add volume
                 }
-            except:
+            except Exception as e:
+                print(f"Error fetching {sym}: {e}")
                 quotes[sym] = {"price": None, "change": None}
     except Exception as e:
         print(f"Stock fetch error: {e}")
