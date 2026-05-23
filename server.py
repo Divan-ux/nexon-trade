@@ -123,6 +123,21 @@ live_state = {}
 forex_data = {}
 
 # ─── UTILITIES (same as original) ─────────────────────────────────
+
+@app.route('/api/bloomberg')
+def get_bloomberg():
+    try:
+        import feedparser
+        feed = feedparser.parse('https://feeds.bloomberg.com/markets/news.rss')
+        headlines = []
+        for entry in feed.entries[:8]:
+            headlines.append({
+                'title': entry.get('title', ''),
+                'link': entry.get('link', '')
+            })
+        return jsonify(headlines)
+    except Exception as e:
+        return jsonify([]), 500
 def make_json_safe(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
