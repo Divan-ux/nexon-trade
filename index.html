@@ -621,19 +621,13 @@ function updateSidebar() {
 }
 async function fetchBloombergHeadlines() {
     try {
-        const response = await fetch('https://feeds.bloomberg.com/markets/news.rss?cache=' + Date.now());
-        if (!response.ok) throw new Error();
-        const text = await response.text();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const items = xml.querySelectorAll('item');
+        const response = await fetch('/api/bloomberg');
+        const headlines = await response.json();
         const headlinesList = document.getElementById('bp-headlines');
-        if (headlinesList && items.length > 0) {
-            headlinesList.innerHTML = Array.from(items).slice(0,8).map(item => {
-                const title = item.querySelector('title')?.textContent || 'Headline';
-                const link = item.querySelector('link')?.textContent || '#';
-                return `<li onclick="window.open('${link}','_blank')" title="${title}">${title.substring(0,80)}${title.length>80?'...':''}</li>`;
-            }).join('');
+        if (headlinesList && headlines.length) {
+            headlinesList.innerHTML = headlines.map(h => 
+                `<li onclick="window.open('${h.link}','_blank')">${h.title.substring(0,80)}${h.title.length>80?'...':''}</li>`
+            ).join('');
         } else if (headlinesList) {
             headlinesList.innerHTML = '<li>◆ Markets: S&P 500 ▲</li><li>◆ Tech: NVDA leads AI rally</li><li>◆ Bonds: Yield curve watch</li><li>◆ FX: Dollar index update</li><li>◆ Commodities: Gold steady</li>';
         }
@@ -642,6 +636,7 @@ async function fetchBloombergHeadlines() {
         if(headlinesList) headlinesList.innerHTML = '<li>◆ Markets: S&P 500 ▲</li><li>◆ Tech: NVDA leads AI rally</li><li>◆ Bonds: Yield curve watch</li><li>◆ FX: Dollar index update</li><li>◆ Commodities: Gold steady</li>';
     }
 }
+    
 function renderCurrentView() {
     const views = ['cards-container', 'markets-view', 'forex-view', 'insights-view', 'companies-view', 'briefing-view', 'live-tv-view'];
     views.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
