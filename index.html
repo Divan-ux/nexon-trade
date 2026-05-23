@@ -671,6 +671,7 @@
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
+    const socket = io();
 
     socket.on('pong', () => console.log('❤️ Heartbeat OK'));
 
@@ -764,8 +765,7 @@ socket.on('crypto_update', data => {
             ]
         }
     };
-
-    const socket = io();
+    
     let state = {
         threats:[], vulns:[], companies:[], briefings:[], ticker_news:[], stocks:{},
         stock_history:{}, forex:{}, articles:[], drop_analysis:{},
