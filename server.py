@@ -16,9 +16,9 @@ SECRET_KEY = "nexon_pulse_secret"
 app = Flask(__name__, static_folder='.', template_folder='.')
 app.config['SECRET_KEY'] = SECRET_KEY
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-# ─── RSS FEEDS (unchanged) ─────────────────────────────────────────
+# ─── RSS FEEDS ─────────────────────────────────────────
 RSS_FEEDS = {
     "cybersecurity": [
         "https://feeds.feedburner.com/TheHackersNews",
@@ -122,22 +122,7 @@ state_lock = threading.Lock()
 live_state = {}
 forex_data = {}
 
-# ─── UTILITIES (same as original) ─────────────────────────────────
-
-@app.route('/api/bloomberg')
-def get_bloomberg():
-    try:
-        import feedparser
-        feed = feedparser.parse('https://feeds.bloomberg.com/markets/news.rss')
-        headlines = []
-        for entry in feed.entries[:8]:
-            headlines.append({
-                'title': entry.get('title', ''),
-                'link': entry.get('link', '')
-            })
-        return jsonify(headlines)
-    except Exception as e:
-        return jsonify([]), 500
+# ─── UTILITIES ─────────────────────────────────────────────────
 def make_json_safe(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
@@ -250,10 +235,6 @@ def generate_stock_history():
         history[sym] = prices
     return history
 
-def fetch_nvd_vulns():
-    """Kept for possible future use, but not used in Stock Insights tab."""
-    return []
-
 def generate_briefing(articles):
     top5 = articles[:5]
     summaries = [summarize_text(a["summary"] or a["title"]) for a in top5]
@@ -284,12 +265,7 @@ def transform_to_threats(articles):
     return threats[:20]
 
 def generate_stock_insights(stocks, articles):
-    """
-    Creates a list of stock insights: for each ticker, a reason for its movement
-    based on recent news (simulated but realistic using keywords).
-    """
     insights = []
-    # Predefined reason templates per movement
     reason_templates_pos = [
         "Strong quarterly earnings beat expectations.",
         "Analyst upgrade from [Firm], price target raised.",
@@ -310,7 +286,6 @@ def generate_stock_insights(stocks, articles):
         if data.get("price") is None or data.get("change") is None:
             continue
         change = data["change"]
-        # Generate a plausible reason
         if change > 3:
             reason = random.choice(reason_templates_pos) + " " + ("Strong volume confirms uptrend." if random.random()>0.5 else "Outperforming sector peers.")
         elif change > 0.5:
@@ -322,7 +297,6 @@ def generate_stock_insights(stocks, articles):
         else:
             reason = neutral_reason
         
-        # For known big tech, add specific flavour
         if sym == "GOOGL":
             if change < -1:
                 reason = "Antitrust lawsuit concerns and increased competition in search AI (ChatGPT, Perplexity)."
@@ -353,7 +327,6 @@ def generate_stock_insights(stocks, articles):
             "reason": reason,
             "sentiment": "bullish" if change > 0 else ("bearish" if change < 0 else "neutral")
         })
-    # Sort by absolute change (top movers first)
     insights.sort(key=lambda x: abs(x["change"]), reverse=True)
     return insights[:30]
 
@@ -399,14 +372,14 @@ def refresh_all():
             "last_updated": datetime.utcnow().isoformat(),
             "sources_count": sum(len(v) for v in RSS_FEEDS.values()),
             "forex": forex,
-            "stock_insights": stock_insights   # new field for Stock Insights tab
+            "stock_insights": stock_insights
         }
         live_state = make_json_safe(new_state)
     socketio.emit("live_data", live_state)
 
 def forex_updater():
     while True:
-        time.sleep(60)  # update forex every minute
+        time.sleep(60)
         try:
             forex = fetch_forex_rates()
             with state_lock:
@@ -430,6 +403,22 @@ def stock_updater():
         except:
             pass
 
+# ─── BLOOMBERG ENDPOINT (NO CORS) ─────────────────────────────────
+@app.route('/api/bloomberg')
+def get_bloomberg():
+    try:
+        feed = feedparser.parse('https://feeds.bloomberg.com/markets/news.rss')
+        headlines = []
+        for entry in feed.entries[:8]:
+            headlines.append({
+                'title': entry.get('title', ''),
+                'link': entry.get('link', '')
+            })
+        return jsonify(headlines)
+    except Exception as e:
+        print(f"Bloomberg fetch error: {e}")
+        return jsonify([]), 500
+
 # ─── ROUTES ───────────────────────────────────────────────────────
 @app.route("/")
 def index():
@@ -447,8 +436,10 @@ def on_connect(auth=None):
 def on_refresh(auth=None):
     refresh_all()
 
+# ─── MAIN ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    print("NEXON PULSE SERVER – launching on port 5000")
+    port = int(os.environ.get('PORT', 5000))
+    print(f"NEXON PULSE SERVER – launching on port {port}")
     refresh_all()
     threading.Thread(target=stock_updater, daemon=True).start()
     threading.Thread(target=forex_updater, daemon=True).start()
@@ -457,5 +448,4 @@ if __name__ == "__main__":
             time.sleep(300)
             refresh_all()
     threading.Thread(target=scheduled, daemon=True).start()
-    socketio.run(app, host="0.0.0.0", port=int(os.environ.get('PORT', 5000)),
-                 debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)
