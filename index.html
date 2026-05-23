@@ -565,6 +565,16 @@
         .ft-brand { font-family: var(--font-brand); font-size: 0.9rem; letter-spacing: 5px; color: var(--gold-dim); }
         .ft-txt { font-family: var(--font-mono); color: var(--text-3); letter-spacing: 1px; }
 
+        #alert-toast {
+              position: fixed; bottom: 30px; right: 30px; z-index: 10000;
+              background: #111; border: 2px solid var(--gold); color: var(--text-1);
+              padding: 18px 22px; border-radius: 4px; max-width: 420px;
+             box-shadow: 0 0 40px rgba(212,175,55,0.4); display: none;
+        }
+        .alert-critical { border-color: #EF4444 !important; }
+        .tv-widget-container { min-height: 520px; }
+        #tv-advanced-chart { height : 620px; }
+
         @media (max-width: 1100px) { #sidebar { display: none; } .tv-grid { grid-template-columns: 1fr; } }
         @media (max-width: 700px) { .brand-tag { display: none; } .grid-main { grid-template-columns: 1fr; } }
     </style>
@@ -588,6 +598,7 @@
     <button class="tab on" data-view="feed">Feed</button>
     <button class="tab" data-view="markets">Markets+</button>
     <button class="tab" data-view="forex">Forex</button>
+    <button class="tab" data-view="crypto">Crypto</button>
     <button class="tab" data-view="vulns">Vulnerabilities</button>
     <button class="tab" data-view="companies">Companies</button>
     <button class="tab" data-view="briefing">Briefing</button>
@@ -643,6 +654,7 @@
         <div id="briefing-view" style="display:none;"></div>
         <!-- Live TV View -->
         <div id="live-tv-view" style="display:none;"></div>
+        <div id="crypto-view" style="display:none;"></div>
     </div>
 
     <div id="sidebar">
@@ -655,8 +667,25 @@
 
 <div id="footer"><div class="ft-brand">NEXON PULSE</div><div class="ft-txt">© 2026 Intelligence Terminal · TradingView · Bloomberg · Live Data</div></div>
 
+    <div id="alert-toast"></div>
+
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
+
+    socket.on('pong', () => console.log('❤️ Heartbeat OK'));
+
+socket.on('crypto_alert', (alert) => {
+    const toast = document.getElementById('alert-toast');
+    toast.innerHTML = `<strong>CRYPTO ALERT</strong><br>${alert.symbol} ${alert.change_pct > 0 ? '▲' : '▼'} ${alert.change_pct.toFixed(1)}% @ $${alert.price}`;
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 8000);
+});
+
+socket.on('crypto_update', data => {
+    state.crypto = data.crypto;
+    if (currentView === 'crypto') renderCrypto();
+}); 
+    
     // ═══════════ LIVE TV CHANNELS BY CONTINENT (all real 24/7 YouTube live streams) ═══════════
     const LIVE_TV = {
         americas: {
@@ -818,6 +847,29 @@
         document.getElementById('sources-list').innerHTML = ['Reuters','Hacker News','BleepingComputer','Wired','CNBC','BBC','CISA','NSA','Bloomberg','NVD'].map(s => `<div class="tr-item"><div class="tr-body"><div class="tr-kw" style="font-size:0.7rem;">${s}</div></div><span style="color:var(--green);font-size:0.6rem;">● LIVE</span></div>`).join('');
     }
 
+    function renderCrypto() {
+    const div = document.getElementById('crypto-view');
+    const crypto = state.crypto || {};
+    let html = `<div class="feed-label">Cryptocurrency Markets • Real-time</div>`;
+    const symbols = Object.keys(crypto);
+    if (symbols.length === 0) {
+        html += '<div class="card" style="padding:60px;text-align:center;">Loading crypto data...</div>';
+    } else {
+        html += `<div class="grid-main">` + symbols.map(sym => {
+            const c = crypto[sym];
+            if (!c || c.price == null) return '';
+            const changeClass = (c.change || 0) >= 0 ? 'stock-up' : 'stock-down';
+            return `
+            <div class="card" onclick="showStockDetail('${sym}')">
+                <div class="c-top"><span class="c-cat cat-market">${sym}</span><span class="c-time">LIVE</span></div>
+                <div class="c-title">$${c.price.toFixed(2)}</div>
+                <div class="c-summary ${changeClass}">${(c.change || 0).toFixed(2)} (${(c.change_pct || 0).toFixed(1)}%)</div>
+            </div>`;
+        }).join('') + `</div>`;
+    }
+    div.innerHTML = html;
+}
+
     function renderCurrentView() {
         ['cards-container','markets-view','forex-view','vulns-view','companies-view','briefing-view','live-tv-view'].forEach(id => {
             const el = document.getElementById(id);
@@ -850,6 +902,11 @@
             case 'live-tv':
                 document.getElementById('live-tv-view').style.display = '';
                 renderLiveTV(); break;
+            case 'crypto':
+                document.getElementById('crypto-view').style.display = '';
+                renderCrypto();
+                 break;
+// remove map case
         }
     }
 
