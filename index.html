@@ -621,19 +621,16 @@ function updateSidebar() {
 }
 async function fetchBloombergHeadlines() {
     try {
-        const response = await fetch('/api/bloomberg');
-        const headlines = await response.json();
-        const headlinesList = document.getElementById('bp-headlines');
-        if (headlinesList && headlines.length) {
-            headlinesList.innerHTML = headlines.map(h => 
-                `<li onclick="window.open('${h.link}','_blank')">${h.title.substring(0,80)}${h.title.length>80?'...':''}</li>`
-            ).join('');
-        } else if (headlinesList) {
-            headlinesList.innerHTML = '<li>◆ Markets: S&P 500 ▲</li><li>◆ Tech: NVDA leads AI rally</li><li>◆ Bonds: Yield curve watch</li><li>◆ FX: Dollar index update</li><li>◆ Commodities: Gold steady</li>';
+        const res = await fetch('/api/bloomberg');
+        const headlines = await res.json();
+        const container = document.getElementById('bp-headlines');
+        if (container && headlines.length) {
+            container.innerHTML = headlines.map(h => `<li onclick="window.open('${h.link}','_blank')">${h.title.substring(0,80)}${h.title.length>80?'...':''}</li>`).join('');
+        } else if (container) {
+            container.innerHTML = '<li>◆ Markets: S&P 500 ▲</li><li>◆ Tech: NVDA leads AI rally</li>';
         }
     } catch(e) {
-        const headlinesList = document.getElementById('bp-headlines');
-        if(headlinesList) headlinesList.innerHTML = '<li>◆ Markets: S&P 500 ▲</li><li>◆ Tech: NVDA leads AI rally</li><li>◆ Bonds: Yield curve watch</li><li>◆ FX: Dollar index update</li><li>◆ Commodities: Gold steady</li>';
+        console.warn('Bloomberg fallback');
     }
 }
     
