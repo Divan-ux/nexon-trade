@@ -442,4 +442,5 @@ if __name__ == "__main__":
             time.sleep(300)
             refresh_all()
     threading.Thread(target=scheduled, daemon=True).start()
-    socketio.run(app, host="0.0.0.0", port=5000, debug=False, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=int(os.environ.get('PORT', 5000)),
+                 debug=False, allow_unsafe_werkzeug=True)
